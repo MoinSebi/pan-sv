@@ -1,0 +1,26 @@
+[package]
+name = "pan-sv"
+version = "0.1.0"
+authors = ["moinSebi <s.vorbrugg@googlemail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+#gfaR = {path = "../gfaR"}
+#nested_intervals = {path = "/home/svorbrugg_local/Rust/nested_intervals"}
+#related_intervals = "0.1.0"
+related_intervals = {git = "https://github.com/MoinSebi/nested_intervals"}
+clap = "=3.0.0-beta.4"
+gfaR_wrapper = {git = "https://github.com/MoinSebi/gfaR_wrapper"}
+
+bifurcation = {git = "https://github.com/MoinSebi/bifurcation"}
+
+log = "0.4.0"
+env_logger = "0.8.4"
+chrono = "0.4"
+
+
+[dev-dependencies]
+assert_cmd = "2.0"
+predicates = "2.1"
