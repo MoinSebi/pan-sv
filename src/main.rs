@@ -3,7 +3,6 @@
 mod core;
 #[allow(non_snake_case)]
 mod panSV;
-mod bifurcation;
 
 use std::collections::HashMap;
 use crate::core::counting::{CountNode};
@@ -16,7 +15,6 @@ use env_logger::{Builder,Target};
 use crate::panSV::panSV_core::{BubbleWrapper, OldNaming, PanSVpos};
 use gfaR_wrapper::{NGfa, GraphWrapper};
 use log::{info, LevelFilter, warn};
-use crate::bifurcation::algo::{bifurcation_wrapper};
 use crate::core::writer::{writing_traversals, writing_bed, bubble_naming_new, bubble_naming_old, bubble_parent_structure, writing_uniques_bed, writing_bed_traversals, writing_uniques_bed_stats};
 use std::io::Write;
 use chrono::Local;
@@ -41,10 +39,6 @@ fn main() {
             .about("Output prefix")
             .takes_value(true)
             .default_value("panSV.output"))
-        .arg(Arg::new("bifurcation")
-            .short('b')
-            .long("bifurcation")
-            .about("Bifurcation mode "))
         .arg(Arg::new("traversal")
             .long("traversal")
             .about("Additional traversal file as output"))
@@ -148,29 +142,25 @@ fn main() {
     let h = graph2pos(&graph);
 
 
-    if matches.is_present("bifurcation"){
-        bi_wrapper = bifurcation_wrapper(&graph, &threads);
-        bub_wrapper = create_bubbles(&bi_wrapper, & graph.paths, &h, &threads);
-    } else {
-        let mut counts: CountNode = CountNode::new();
+
+    let mut counts: CountNode = CountNode::new();
+    info!("Counting nodes");
+    if matches.is_present("delimiter"){
+        let mut gra_wrapper: GraphWrapper = GraphWrapper::new();
+        gra_wrapper.fromNGfa(&graph, matches.value_of("delimiter").unwrap());
+        info!("{} Genomes and {} Paths", gra_wrapper.genomes.len(), graph.paths.len());
         info!("Counting nodes");
-        if matches.is_present("delimiter"){
-            let mut gra_wrapper: GraphWrapper = GraphWrapper::new();
-            gra_wrapper.fromNGfa(&graph, matches.value_of("delimiter").unwrap());
-            info!("{} Genomes and {} Paths", gra_wrapper.genomes.len(), graph.paths.len());
-            info!("Counting nodes");
-            counts.counting_wrapper(&graph, &gra_wrapper);
-        } else {
-            info!("{} Genomes and {} Paths", graph.paths.len(), graph.paths.len());
-            info!("Counting nodes");
-            counts.counting_graph(&graph);
-        }
-        bi_wrapper = algo_panSV(&graph.paths, &counts).0;
-        bub_wrapper = create_bubbles(&bi_wrapper, &graph.paths, &h, &threads);
-        info!("Indel detection");
-        let interval_numb = bub_wrapper.id2interval.len() as u32;
-        indel_detection(& mut bub_wrapper, &graph.paths, interval_numb);
+        counts.counting_wrapper(&graph, &gra_wrapper);
+    } else {
+        info!("{} Genomes and {} Paths", graph.paths.len(), graph.paths.len());
+        info!("Counting nodes");
+        counts.counting_graph(&graph);
     }
+    bi_wrapper = algo_panSV(&graph.paths, &counts).0;
+    bub_wrapper = create_bubbles(&bi_wrapper, &graph.paths, &h, &threads);
+    info!("Indel detection");
+    let interval_numb = bub_wrapper.id2interval.len() as u32;
+    indel_detection(& mut bub_wrapper, &graph.paths, interval_numb);
 
 
 
