@@ -1,10 +1,10 @@
-# gsv - Graph structural variation detection 
+# pan-sv - Graph structural variation detection using pan level
 
 
 **From source** 
 ```asm
-git clone https://github.com/MoinSebi/gSV.git
-cd gSV 
+git clone https://github.com/MoinSebi/pan-sv.git
+cd pan-sv 
 cargo build --release
 ```
 
