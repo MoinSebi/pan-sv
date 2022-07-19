@@ -114,13 +114,13 @@ pub fn sort_trav(result:  HashMap<String, Vec<PanSVpos>>) -> HashMap<String, Vec
     let mut new_result: HashMap<String, Vec<PanSVpos>> = HashMap::new();
 
 
-    for (k, v) in result.iter(){
-        let mut j = Vec::new();
-        for x in v.iter(){
-            j.push(x.clone());
+    for (key, panSV_vec) in result.iter(){
+        let mut panSV_new = Vec::new();
+        for entry in panSV_vec.iter(){
+            panSV_new.push(entry.clone());
         }
-        j.sort_by(|a, b| (a.start.cmp(&b.start).then(b.end.cmp(&a.end))));
-        new_result.insert(k.to_owned().clone(), j) ;
+        panSV_new.sort_by(|a, b| (a.start.cmp(&b.start).then(b.end.cmp(&a.end))));
+        new_result.insert(key.to_owned().clone(), panSV_new) ;
         //v.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
     }
