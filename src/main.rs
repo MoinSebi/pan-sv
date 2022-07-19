@@ -15,7 +15,7 @@ use env_logger::{Builder,Target};
 use crate::panSV::panSV_core::{BubbleWrapper, OldNaming, PanSVpos};
 use gfaR_wrapper::{NGfa, GraphWrapper};
 use log::{info, LevelFilter, warn};
-use crate::core::writer::{writing_traversals, writing_bed, bubble_naming_new, bubble_naming_old, bubble_parent_structure, writing_uniques_bed, writing_bed_traversals, writing_uniques_bed_stats};
+use crate::core::writer::{writing_traversals, writing_bed, bubble_naming_new, bubble_parent_structure, writing_uniques_bed, writing_bed_traversals, writing_uniques_bed_stats};
 use std::io::Write;
 use chrono::Local;
 
@@ -172,12 +172,9 @@ fn main() {
 
 
     info!("Writing stats");
-    if matches.is_present("old naming"){
-        bubble_naming_old(&bub_wrapper.id2bubble, & mut jj.hm, outprefix, &(graph.paths.len() as u32));
-    } else {
-        bubble_naming_new(&bub_wrapper.id2bubble, outprefix);
-        bubble_parent_structure(&bub_wrapper.id2bubble, outprefix);
-    }
+    bubble_naming_new(&bub_wrapper.id2bubble, outprefix);
+    bubble_parent_structure(&bub_wrapper.id2bubble, outprefix);
+
 
 
 
