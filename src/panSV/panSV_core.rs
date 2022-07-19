@@ -17,21 +17,6 @@ pub struct TmpPos {
 }
 
 
-
-pub struct OldNaming {
-    pub hm: HashMap<u32, Vec<u32>>,
-}
-
-impl OldNaming {
-    pub fn new()->Self{
-        let g:  HashMap<u32, Vec<u32>> = HashMap::new();
-        Self{
-            hm: g,
-        }
-    }
-}
-
-
 /// BubbleWrapper holds multiple index structures
 ///
 /// - id2bubbles: Index to bubble structure (this might be changed to HashMap)

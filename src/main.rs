@@ -6,13 +6,13 @@ mod panSV;
 
 use std::collections::HashMap;
 use crate::core::counting::{CountNode};
-use crate::panSV::algo::{algo_panSV, create_bubbles, indel_detection, check_bubble_size, sort_trav, nest_version2};
+use crate::panSV::algo::{algo_panSV, create_bubbles, indel_detection, check_bubble_size, nest_version2};
 use crate::core::graph_helper::graph2pos;
 use clap::{Arg, App, AppSettings};
 use std::path::Path;
 use std::process;
 use env_logger::{Builder,Target};
-use crate::panSV::panSV_core::{BubbleWrapper, OldNaming, PanSVpos};
+use crate::panSV::panSV_core::{BubbleWrapper, PanSVpos};
 use gfaR_wrapper::{NGfa, GraphWrapper};
 use log::{info, LevelFilter, warn};
 use crate::core::writer::{writing_traversals, writing_bed, bubble_naming_new, bubble_parent_structure, writing_uniques_bed, writing_bed_traversals, writing_uniques_bed_stats};
@@ -167,8 +167,6 @@ fn main() {
         info!("Nestedness");
         nest_version2(& mut bub_wrapper);
     }
-
-    let mut jj = OldNaming::new();
 
 
     info!("Writing stats");

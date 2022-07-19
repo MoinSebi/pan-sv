@@ -1,11 +1,10 @@
-use std::collections::{HashMap, BTreeSet, HashSet};
+use std::collections::{HashMap, BTreeSet};
 use crate::core::counting::{CountNode};
 use crate::panSV::panSV_core::{PanSVpos, TmpPos, BubbleWrapper};
 use crate::core::core::{Posindex, Bubble, Traversal};
 use related_intervals::{make_nested, Network};
 use gfaR_wrapper::NPath;
 use std::io::{self, Write};
-use std::cmp::min;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use bifurcation::helper::chunk_inplace;
@@ -333,29 +332,6 @@ pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, result: &  mut
     }
 
 }
-
-/// Wrapper function for connect_bubbles
-///
-/// Running function for each path alone
-pub fn connect_bubbles_wrapper(hm: &HashMap<String, Vec<PanSVpos>>, result: &  mut BubbleWrapper){
-    info!("Connecting bubbles");
-    let mut network: HashMap<(u32, u32), Network>;
-    for (i ,(k,v)) in hm.iter().enumerate(){
-
-        info!("({}/{}) {}\r", i+1, hm.len(), k);
-        io::stdout().flush().unwrap();
-
-        let mut jo: Vec<(u32, u32)> = Vec::new();
-        for x in v.iter() {
-            jo.push((x.start.clone(), x.end.clone()));
-        }
-        network = related_intervals::create_network_hashmap(&jo);
-        make_nested(&jo, & mut network);
-        connect_bubbles(&network,  result, &k);
-
-    }
-}
-
 
 /// Conntect bubbles and add children and parents
 pub fn connect_bubbles(hm: &HashMap<(u32, u32), Network>, result: & mut BubbleWrapper, s: &String){
