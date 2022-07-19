@@ -24,16 +24,25 @@ fn main() {
     let matches = App::new("panSV")
         .setting(AppSettings::ArgRequiredElseHelp)
         .version("0.1.0")
-        .author("Sebastian V")
+        .author("Sebastian V, Christian K")
         .about("Bubble detection")
+
+        .help_heading("Input options")
         .arg(Arg::new("gfa")
             .short('g')
             .long("gfa")
             .about("Input GFA file")
             .takes_value(true)
             .required(true))
+        .arg(Arg::new("delimiter")
+        .short('d')
+        .long("delimiter")
+        .about("Delimiter for between genome and chromosome")
+        .takes_value(true))
 
+        .help_heading("Output options")
         .arg(Arg::new("output")
+            .display_order(1)
             .short('o')
             .long("output")
             .about("Output prefix")
@@ -41,48 +50,37 @@ fn main() {
             .default_value("panSV.output"))
         .arg(Arg::new("traversal")
             .long("traversal")
-            .about("Additional traversal file as output"))
-        .arg(Arg::new("old naming")
-            .short('n')
-            .long("naming")
-            .about("Change the naming"))
-        .arg(Arg::new("delimiter")
-            .short('d')
-            .long("delimiter")
-            .about("Delimiter for between genome and chromosome")
-            .takes_value(true))
+            .about("Report additional traversals in additional file"))
         .arg(Arg::new("unique")
+            .display_order(2)
             .short('u')
             .long("unique")
-            .about("Return additional files with unique traversals above THIS value")
+            .about("Report unique traversals with a size above this level [default: off]")
             .default_value("50")
             .takes_value(true))
         .arg(Arg::new("Nestedness")
             .long("nestedness")
-            .about("Add nestedness to the stats output"))
-        .arg(Arg::new("verbose")
-            .short('v')
-            .about("-v = DEBUG | -vv = TRACE")
-            .takes_value(true)
-            .default_missing_value("v1"))
-        .arg(Arg::new("quiet")
-            .short('q')
-            .about("No updating INFO messages"))
+            .about("Adds NL-tag (nestedness-level) to the stats output file [default: off]"))
+        .help_heading("Threading")
         .arg(Arg::new("threads")
             .short('t')
             .long("threads")
             .about("Number of threads")
             .default_value("1"))
-
-
-
+        .help_heading("Processing information")
+        .arg(Arg::new("quiet")
+            .short('q')
+            .about("No updating INFO messages"))
+        .arg(Arg::new("verbose")
+            .short('v')
+            .about("-v = DEBUG | -vv = TRACE")
+            .takes_value(true)
+            .default_missing_value("v1"))
         .get_matches();
 
-
-
-    let mut level = LevelFilter::Info;
     // Checking verbose
     // Ugly, but needed - May end up in a small library later
+    let mut level = LevelFilter::Info;
     if matches.is_present("quiet"){
         level = LevelFilter::Warn;
     }
@@ -95,7 +93,6 @@ fn main() {
             level = LevelFilter::Trace
         }
     }
-
     Builder::new()
         .format(|buf, record| {
             writeln!(buf,
@@ -109,15 +106,16 @@ fn main() {
         .target(Target::Stderr)
         .init();
 
+    //-------------------------------------------------------------------------------------------------
 
-    info!("Running gSV");
+    info!("Welcome to panSV");
     let threads= matches.value_of("threads").unwrap().parse().unwrap();
 
-    let mut g1 = "not_relevant";
+    // Check if graph is running
+    let mut graph_file = "not_relevant";
     if matches.is_present("gfa") {
-
         if Path::new(matches.value_of("gfa").unwrap()).exists() {
-            g1 = matches.value_of("gfa").unwrap();
+            graph_file = matches.value_of("gfa").unwrap();
         } else {
             warn!("No file with such name");
             process::exit(0x0100);
@@ -125,21 +123,18 @@ fn main() {
 
     }
 
+    // This is the prefix
     let outprefix= matches.value_of("output").unwrap();
 
 
-
+    // Read the graph
     let mut graph: NGfa = NGfa::new();
-    graph.from_graph(g1);
+    graph.from_graph(graph_file);
 
     // Counting nodes
-
-
-    // test
-
     let mut bub_wrapper: BubbleWrapper;
     let bi_wrapper: HashMap<String, Vec<PanSVpos>>;
-    let h = graph2pos(&graph);
+    let g2p = graph2pos(&graph);
 
 
 
@@ -157,7 +152,7 @@ fn main() {
         counts.counting_graph(&graph);
     }
     bi_wrapper = algo_panSV(&graph.paths, &counts).0;
-    bub_wrapper = create_bubbles(&bi_wrapper, &graph.paths, &h, &threads);
+    bub_wrapper = create_bubbles(&bi_wrapper, &graph.paths, &g2p, &threads);
     info!("Indel detection");
     let interval_numb = bub_wrapper.id2interval.len() as u32;
     indel_detection(& mut bub_wrapper, &graph.paths, interval_numb);
@@ -187,8 +182,8 @@ fn main() {
 
 
     info!("Writing bed");
-    writing_bed(&bub_wrapper, &h, outprefix);
-    writing_bed_traversals(&bub_wrapper, &h, outprefix);
+    writing_bed(&bub_wrapper, &g2p, outprefix);
+    writing_bed_traversals(&bub_wrapper, &g2p, outprefix);
 
 
     if matches.is_present("traversal"){
@@ -199,8 +194,8 @@ fn main() {
     if matches.is_present("unique"){
         info!("Writing traversal");
         let size: usize = matches.value_of("unique").unwrap().parse().unwrap();
-        writing_uniques_bed(&bub_wrapper, &h, outprefix, size);
-        writing_uniques_bed_stats(&bub_wrapper, &h, outprefix, size);
+        writing_uniques_bed(&bub_wrapper, &g2p, outprefix, size);
+        writing_uniques_bed_stats(&bub_wrapper, &g2p, outprefix, size);
     }
 
 
