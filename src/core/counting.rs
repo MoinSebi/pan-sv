@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use gfaR_wrapper::NGfa;
 
 
-
+#[derive(Debug, Clone)]
 /// Dummy struct for counting number of traversals
 pub struct CountNode {
     pub ncount: HashMap<u32, u32>,
