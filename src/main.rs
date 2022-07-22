@@ -6,7 +6,7 @@ mod panSV;
 
 use std::collections::HashMap;
 use crate::core::counting::{CountNode};
-use crate::panSV::algo::{algo_panSV, create_bubbles, indel_detection, check_bubble_size, nest_version2};
+use crate::panSV::algo::{create_bubbles, indel_detection, check_bubble_size, nest_version2, algo_panSV_multi};
 use crate::core::graph_helper::graph2pos;
 use clap::{Arg, App, AppSettings};
 use std::path::Path;
@@ -151,7 +151,7 @@ fn main() {
         info!("Counting nodes");
         counts.counting_graph(&graph);
     }
-    bi_wrapper = algo_panSV(&graph.paths, &counts).0;
+    bi_wrapper = algo_panSV_multi(&graph.paths, &counts, &4);
     bub_wrapper = create_bubbles(&bi_wrapper, &graph.paths, &g2p, &threads);
     info!("Indel detection");
     let interval_numb = bub_wrapper.id2interval.len() as u32;

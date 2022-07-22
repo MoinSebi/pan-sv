@@ -10,7 +10,7 @@ use std::thread;
 use bifurcation::helper::chunk_inplace;
 use log::info;
 
-pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: &CountNode, threads: &usize) -> (HashMap<String, Vec<PanSVpos>>, HashMap<String, usize>){
+pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: &CountNode, threads: &usize) -> HashMap<String, Vec<PanSVpos>>{
 
     let mut result_panSV2: HashMap<String, Vec<PanSVpos>> = HashMap::new();
     let mut max_index: HashMap<String, usize> = HashMap::new();
@@ -117,101 +117,7 @@ pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: &CountNode, threads: &usize)
 
 
     let result_result = sort_trav(result_panSV2);
-    (result_result, max_index)
-}
-#[allow(non_snake_case)]
-/// PanSV algorithm
-///
-/// Input: paths, counts
-/// Output: HM(String -> Vec<pos>)
-/// panSVpos: index, index, core
-///
-pub fn algo_panSV(paths: & Vec<NPath>, counts: &CountNode) -> (HashMap<String, Vec<PanSVpos>>, HashMap<String, usize>) {
-    info!("PanSV running");
-
-    let mut lastcore: u32;
-    #[allow(non_snake_case)]
-        let mut result_panSV: HashMap<String, Vec<PanSVpos>> = HashMap::new();
-
-    let mut max_index: HashMap<String, usize> = HashMap::new();
-
-    // We create String -> (start, stop, core)
-    for x in paths{
-        let ki: Vec<_> = Vec::new();
-        result_panSV.insert(x.name.to_owned().clone(), ki);
-    }
-
-
-    // Iterate over each path
-    for (i, x) in paths.iter().enumerate() {
-        // Need max index later
-        max_index.insert(x.name.clone(), x.nodes.len()-1);
-        lastcore = 1;
-
-        // All "open" intervals
-        let mut interval_open:  Vec<TmpPos> = Vec::new();
-
-        info!("({}/{}) {}\r", i+1, paths.len(), x.name);
-        io::stderr().flush().unwrap();
-        // Iterate over all nodes
-        for (index, node) in x.nodes.iter().enumerate() {
-
-            // if core is smaller than before -> open new bubble
-            if counts.ncount[node] < lastcore {
-                interval_open.push(TmpPos { acc: x.name.clone(), start: (index - 1) as u32, core: lastcore});
-
-            }
-            // If bigger -> close bubble
-            else if (counts.ncount[node] > lastcore) & (interval_open.len() > 0) {
-                lastcore = counts.ncount[node];
-
-                // There is no bubble opened with this core level
-                let mut trig = false;
-
-                // List which open trans are removed later
-                let mut remove_list: Vec<usize> = Vec::new();
-
-
-                // We iterate over all open bubbles
-                for (index_open, o_trans) in interval_open.iter().enumerate() {
-                    // Check if we find the same core level
-                    if (o_trans.core == counts.ncount[node]) | (interval_open[interval_open.len() - 1].core < counts.ncount[node]){
-                        trig = true;
-                    }
-
-
-                    // If one open_interval has smaller (or same) core level -> close
-                    if o_trans.core <= counts.ncount[node] {
-                        // why this?
-                        if index != 0 {
-                            result_panSV.get_mut(&o_trans.acc).unwrap().push(PanSVpos {start: o_trans.start, end: index as u32, core: o_trans.core});
-
-                        }
-                        remove_list.push(index_open);
-                    }
-                }
-                // Remove stuff from the interval_open list
-                for (index_r, index_remove) in remove_list.iter().enumerate() {
-                    interval_open.remove(*index_remove - index_r);
-                }
-
-                // If there is not a open interval which has the same core level -> this still exists
-                if !trig {
-                    //println!("BIG HIT");
-                    result_panSV.get_mut(&x.name).unwrap().push(PanSVpos {start: interval_open[interval_open.len() - 1].start, end: index as u32, core: lastcore});
-                }
-
-            }
-            lastcore = counts.ncount[node];
-
-        }
-        // This the other end - its one longer than the rest (identifier)
-
-    }
-    let result_result = sort_trav(result_panSV);
-    //println!("{:?}", result_result);
-
-    (result_result, max_index)
+    result_result
 }
 
 /// Sorting vector in hashmaps
