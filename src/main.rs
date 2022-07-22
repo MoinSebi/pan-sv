@@ -5,19 +5,19 @@ mod core;
 mod panSV;
 
 use std::collections::HashMap;
+use std::env::args;
 use crate::core::counting::{CountNode};
 use crate::panSV::algo::{create_bubbles, indel_detection, check_bubble_size, nest_version2, algo_panSV_multi};
 use crate::core::graph_helper::graph2pos;
 use clap::{Arg, App, AppSettings};
 use std::path::Path;
 use std::process;
-use env_logger::{Builder,Target};
 use crate::panSV::panSV_core::{BubbleWrapper, PanSVpos};
 use gfaR_wrapper::{NGfa, GraphWrapper};
 use log::{info, LevelFilter, warn};
 use crate::core::writer::{writing_traversals, writing_bed, bubble_naming_new, bubble_parent_structure, writing_uniques_bed, writing_bed_traversals, writing_uniques_bed_stats};
 use std::io::Write;
-use chrono::Local;
+use crate::core::logging::newbuilder;
 
 
 fn main() {
@@ -80,31 +80,7 @@ fn main() {
 
     // Checking verbose
     // Ugly, but needed - May end up in a small library later
-    let mut level = LevelFilter::Info;
-    if matches.is_present("quiet"){
-        level = LevelFilter::Warn;
-    }
-
-    else if matches.is_present("verbose"){
-        if matches.value_of("verbose").unwrap() == "v1"{
-            level = LevelFilter::Debug;
-        }
-        else if matches.value_of("verbose").unwrap() == "v"{
-            level = LevelFilter::Trace
-        }
-    }
-    Builder::new()
-        .format(|buf, record| {
-            writeln!(buf,
-                     "{} [{}] - {}",
-                     Local::now().format("%d/%m/%Y %H:%M:%S %p"),
-                     record.level(),
-                     record.args()
-            )
-        })
-        .filter(None, level)
-        .target(Target::Stderr)
-        .init();
+    newbuilder(&matches);
 
     //-------------------------------------------------------------------------------------------------
 
