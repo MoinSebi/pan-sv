@@ -5,39 +5,31 @@ use std::process::Command;
 use std::fs;
 
 #[test]
-fn yeet() -> Result<(), Box<dyn std::error::Error>> {
+/// Testing pan-sv
+/// Parameters.
+///     --gfa
+///     -o test4
+///
+fn main_solo() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gSV")?;
     cmd
         .arg("--gfa")
         .arg("/home/svorbrugg_local/Rust/gSV/example_data/testGraph.gfa")
         .arg("-o")
-        .arg("example_data/test4")
-        .arg("--nestedness");
+        .arg("./data/example_data/test1");
 
     cmd.assert().success();
-    //fs::remove_file("example_data/test3.bubble.stats")?;
-    //fs::remove_file("example_data/test3.bubble.txt")?;
-    //fs::remove_file("example_data/test3.traversal.bed")?;
+    let foo: String = fs::read_to_string("data/example_data/test1.bubble.txt").unwrap();
+    assert_eq!(foo.contains("1	{2}	{0}"), true);
+
+    let path = "data/example_data";
+    fs::remove_dir_all(path).unwrap();
+    fs::create_dir(path).unwrap();
+
 
     Ok(())
 }
 
-#[test]
-fn bifurcation_simple() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("gSV")?;
-    cmd
-        .arg("--gfa")
-        .arg("/home/svorbrugg_local/Rust/gSV/example_data/testGraph.gfa")
-        .arg("-o")
-        .arg("example_data/test3")
-        .arg("--nestedness")
-        .arg("-b");
-
-    cmd.assert().success();
-    fs::remove_file("example_data/test3.bubble.txt")?;
-    //fs::remove_file("example_data/test3.bubble.txt")?;
-    //fs::remove_file("example_data/test3.traversal.bed")?;
 
 
-    Ok(())
-}
+
