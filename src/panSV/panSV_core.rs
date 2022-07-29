@@ -16,7 +16,7 @@ pub struct TmpPos {
     pub core:  u32,
 }
 
-
+#[derive(Debug, Clone)]
 /// BubbleWrapper holds multiple index structures
 ///
 /// - id2bubbles: Index to bubble structure (this might be changed to HashMap)

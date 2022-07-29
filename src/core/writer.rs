@@ -2,6 +2,9 @@ use crate::core::core::Bubble;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Write, BufWriter};
+use std::sync::{Arc, Mutex};
+use std::thread;
+use bifurcation::helper::chunk_inplace;
 use crate::panSV::panSV_core::{BubbleWrapper};
 use crate::core::helper::{bool2string_dir, hashset2string};
 
@@ -45,6 +48,11 @@ pub fn bubble_parent_structure(hm1: & HashMap<u32, Bubble>, out: &str){
         write!(f, "{}\t{:?}\t{:?}\n", v.id, v.children, v.parents).expect("Not able to write bubble nestedness file");
     }
 }
+
+
+
+
+
 
 /// Writing bed file
 /// Accession - FROM - TO - BUBBLE ID - BUBBLE CORE - TRAVERSAL

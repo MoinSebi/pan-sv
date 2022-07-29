@@ -5,6 +5,7 @@ use crate::core::core::{Posindex, Bubble, Traversal};
 use related_intervals::{make_nested, Network};
 use gfaR_wrapper::NPath;
 use std::io::{self, Write};
+use std::ops::Add;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use bifurcation::helper::chunk_inplace;
@@ -14,19 +15,25 @@ pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: &CountNode, threads: &usize)
 
     let mut result_panSV2: HashMap<String, Vec<PanSVpos>> = HashMap::new();
     let mut max_index: HashMap<String, usize> = HashMap::new();
-
+    let mut index = 0;
     // We create String -> (start, stop, core)
     for x in paths.iter(){
         let ki: Vec<_> = Vec::new();
         result_panSV2.insert(x.name.to_owned().clone(), ki);
     }
+    let mut ko = HashMap::new();
     let chunks = chunk_inplace(paths.clone(), threads.clone());
-    let rr = Arc::new(Mutex::new(HashMap::new()));
+    let rr = Arc::new(Mutex::new(ko));
     let op1 = Arc::new(counts.clone());
+    let ll = paths.len();
+    let total_len = Arc::new(ll);
+    let ii = Arc::new(Mutex::new(index));
     let mut handles = Vec::new();
     for chunk in chunks{
         let j = rr.clone();
         let op = op1.clone();
+        let i2 = ii.clone();
+        let lo = total_len.clone();
         let handle = thread::spawn(move || {
 
             let mut lastcore: u32;
@@ -37,7 +44,6 @@ pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: &CountNode, threads: &usize)
                 let ki: Vec<_> = Vec::new();
                 result_panSV.insert(x.name.to_owned().clone(), ki);
             }
-            let mut i = 0;
             for x in chunk{
                 //max_index.insert(x.name.clone(), x.nodes.len()-1);
                 lastcore = 1;
@@ -45,8 +51,6 @@ pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: &CountNode, threads: &usize)
                 // All "open" intervals
                 let mut interval_open:  Vec<TmpPos> = Vec::new();
 
-                info!("({}/{}) {}\r", i+1, 10, x.name);
-                i += 1;
                 io::stderr().flush().unwrap();
                 // Iterate over all nodes
                 for (index, node) in x.nodes.iter().enumerate() {
@@ -100,13 +104,17 @@ pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: &CountNode, threads: &usize)
                     lastcore = op.ncount[node];
 
                 }
+                let mut imut = i2.lock().unwrap();
+                *imut = *imut + 1;
+                info!("({}/{}) {}", imut, lo, x.name );
             }
-            println!("{}", p);
-            println!("{:?}", result_panSV);
+
+
             let mut u = j.lock().unwrap();
-            for (key, value) in result_panSV.iter(){
+            for (key, value) in result_panSV.iter() {
                 u.insert(key.clone(), value.clone());
             };
+
         });
         handles.push(handle);
     }
@@ -114,9 +122,13 @@ pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: &CountNode, threads: &usize)
         handle.join().unwrap()
 
     }
+    let mut result = HashMap::new();
+    for x in rr.lock().unwrap().iter(){
+        result.insert(x.0.clone(), x.1.clone());
+    }
 
 
-    let result_result = sort_trav(result_panSV2);
+    let result_result = sort_trav(result);
     result_result
 }
 
@@ -305,6 +317,9 @@ pub fn indel_detection<'a>(r: & mut BubbleWrapper<'a>, paths: &'a Vec<NPath>, la
     }
 }
 
+/// Wrapper for connecting bubbles multithreaded
+///
+///
 pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, result: &  mut BubbleWrapper, threads: &usize){
 
 
@@ -315,15 +330,15 @@ pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, result: &  mut
 
     let chunks = chunk_inplace(g, threads.clone());
     let rr = Arc::new(Mutex::new(Vec::new()));
+    let mut go = Arc::new(Mutex::new(0));
     let mut handles = Vec::new();
+    let total_len = Arc::new(hm.len());
     for chunk in chunks{
         let j = rr.clone();
+        let i2 = go.clone();
+        let lo = total_len.clone();
         let handle = thread::spawn(move || {
             for (i ,(k,v)) in chunk.iter().enumerate(){
-
-                info!("({}/{}) {}\r", i+1, 10, k);
-                io::stdout().flush().unwrap();
-
                 let mut jo: Vec<(u32, u32)> = Vec::new();
                 for x in v.iter() {
                     jo.push((x.start.clone(), x.end.clone()));
@@ -332,6 +347,10 @@ pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, result: &  mut
                 make_nested(&jo, & mut network);
                 let mut rrr = j.lock().unwrap();
                 rrr.push((k.clone(), network));
+
+                let mut imut = i2.lock().unwrap();
+                *imut = *imut + 1;
+                info!("({}/{}) {}", imut, lo, k);
 
             }
         });
