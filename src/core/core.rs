@@ -11,7 +11,7 @@ use std::hash::Hash;
 pub struct Posindex {
     pub from:  u32,
     pub to:   u32,
-    pub acc:  String,
+    pub acc:  u32,
 }
 
 #[derive(Debug, Clone)]
@@ -107,16 +107,6 @@ impl Bubble {
         accession_numb.len()
     }
 
-    #[allow(dead_code)]
-    pub fn all_acc(&self, hm: &HashMap<u32, Posindex>) -> HashSet<String>{
-        let mut accession_numb= HashSet::new();
-        for (_k,v) in self.traversals.iter(){
-            for x in v.pos.iter(){
-                accession_numb.insert(hm.get(x).unwrap().acc.clone());
-            }
-        }
-        accession_numb
-    }
 }
 
 
@@ -141,14 +131,7 @@ impl  Traversal{
         self.pos.push(pos);
     }
 
-    #[allow(dead_code)]
-    pub fn numb_acc(&self, tindex: &HashMap<u32, Posindex>){
-        let mut h :HashSet<&String> = HashSet::new();
-        for x in self.pos.iter(){
-            h.insert(&tindex.get(x).unwrap().acc);
-        }
 
-    }
 
     pub fn new(posid: u32, lens: u32) -> Self{
         let mut k: Vec<u32> = Vec::new();

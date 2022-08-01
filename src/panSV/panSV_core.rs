@@ -25,18 +25,18 @@ pub struct TmpPos {
 /// - anchor2bubble: (Start, end) -> bubble id
 /// - anchor2interval: Posindex (reference) -> number of interval
 /// - id2id: Welches posindex gehoert in welche bubble.
-pub struct BubbleWrapper<'a>{
+pub struct BubbleWrapper{
     pub id2bubble: HashMap<u32, Bubble>,
     pub id2interval: HashMap<u32, Posindex>,
 
     // change this
     pub anchor2bubble: HashMap<(u32, u32), u32>,
-    pub anchor2interval: HashMap<(&'a  u32, &'a  u32,&'a String), u32>, // this is the same as id2interval
-    pub id2id: HashMap<(u32, u32, &'a  String), u32>,
+    //pub anchor2interval: HashMap<(&'a  u32, &'a  u32,&'a String), u32>, // this is the same as id2interval
+    pub id2id: HashMap<(u32, u32, u32), u32>,
 
 }
 
-impl BubbleWrapper<'_>{
+impl BubbleWrapper{
     /// Initial constructor
     ///
     /// All values are empty
@@ -45,14 +45,14 @@ impl BubbleWrapper<'_>{
         let id2interval: HashMap<u32, Posindex> = HashMap::new();
         let anchor2bubble: HashMap<(u32, u32), u32> = HashMap::new();
         let anchor2interval: HashMap<(& u32, & u32, & String), u32> = HashMap::new();
-        let id2id: HashMap<(u32, u32, & String), u32> = HashMap::new();
+        let id2id: HashMap<(u32, u32, u32), u32> = HashMap::new();
 
         Self{
             id2id: id2id,
             id2bubble: id2bubble,
             id2interval: id2interval,
             anchor2bubble: anchor2bubble,
-            anchor2interval: anchor2interval,
+            //anchor2interval: anchor2interval,
         }
     }
 }
