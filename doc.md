@@ -1,4 +1,8 @@
-####Bubble stats
+# Output format 
+Explanation about the main output files from pan-sv. Some additional files are not listed here.
+
+
+####Bubble stats (prefix.bubble.stats)
 
 | Col | Type  | Description                                   |
 |-----|-------|-----------------------------------------------|
@@ -15,7 +19,7 @@
 | 11  | int   | Anchor 2                                      |
 | 12  | float | Ratio Min/Max                                 |
 | 13  | Bool  | Small                                         |
-| 14  | int   | Type                                          | 
+| 14  | int   | Type (see below)                              | 
 
 Flags: 
 - CL: Core level
