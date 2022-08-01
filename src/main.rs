@@ -15,7 +15,7 @@ use std::process;
 use crate::panSV::panSV_core::{BubbleWrapper, PanSVpos};
 use gfaR_wrapper::{NGfa, GraphWrapper};
 use log::{info, LevelFilter, warn};
-use crate::core::writer::{writing_traversals, writing_bed, bubble_naming_new, bubble_parent_structure, writing_uniques_bed, writing_bed_traversals, writing_uniques_bed_stats};
+use crate::core::writer::{writing_traversals, writing_bed, bubble_naming_new, bubble_parent_structure, writing_bed_traversals};
 use std::io::Write;
 use crate::core::logging::newbuilder;
 
@@ -118,7 +118,7 @@ fn main() {
     info!("Counting nodes");
     if matches.is_present("delimiter"){
         let mut gra_wrapper: GraphWrapper = GraphWrapper::new();
-        gra_wrapper.fromNGfa(&graph, matches.value_of("delimiter").unwrap());
+        gra_wrapper.from_ngfa(&graph, matches.value_of("delimiter").unwrap());
         info!("{} Genomes and {} Paths", gra_wrapper.genomes.len(), graph.paths.len());
         info!("Counting nodes");
         counts.counting_wrapper(&graph, &gra_wrapper);
@@ -128,7 +128,7 @@ fn main() {
         counts.counting_graph(&graph);
     }
     bi_wrapper = algo_panSV_multi(&graph.paths, &counts, &4);
-    bub_wrapper = create_bubbles(&bi_wrapper, &graph.paths, &g2p, &threads);
+    bub_wrapper = create_bubbles(&bi_wrapper, &graph.paths, &g2p, &graph.path2id, &threads);
     info!("Indel detection");
     let interval_numb = bub_wrapper.id2interval.len() as u32;
     indel_detection(& mut bub_wrapper, &graph.paths, interval_numb);
@@ -153,21 +153,21 @@ fn main() {
 
 
     info!("Writing bed");
-    writing_bed(&bub_wrapper, &g2p, outprefix);
-    writing_bed_traversals(&bub_wrapper, &g2p, outprefix);
+    writing_bed(&bub_wrapper, &g2p, &graph.paths, outprefix);
+    writing_bed_traversals(&bub_wrapper, &g2p, &graph.paths, outprefix);
 
 
-    if matches.is_present("traversal"){
-        info!("Writing traversal");
-        writing_traversals(&bub_wrapper, outprefix);
-    }
-
-    if matches.is_present("unique"){
-        info!("Writing traversal");
-        let size: usize = matches.value_of("unique").unwrap().parse().unwrap();
-        writing_uniques_bed(&bub_wrapper, &g2p, outprefix, size);
-        writing_uniques_bed_stats(&bub_wrapper, &g2p, outprefix, size);
-    }
+    // if matches.is_present("traversal"){
+    //     info!("Writing traversal");
+    //     writing_traversals(&bub_wrapper, outprefix);
+    // }
+    //
+    // if matches.is_present("unique"){
+    //     info!("Writing traversal");
+    //     let size: usize = matches.value_of("unique").unwrap().parse().unwrap();
+    //     writing_uniques_bed(&bub_wrapper, &g2p, outprefix, size);
+    //     writing_uniques_bed_stats(&bub_wrapper, &g2p, outprefix, size);
+    // }
 
 
 
