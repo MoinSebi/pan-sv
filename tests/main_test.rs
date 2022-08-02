@@ -11,7 +11,7 @@ use std::fs;
 ///     -o test4
 ///
 fn main_solo() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("gSV")?;
+    let mut cmd = Command::cargo_bin("pan-sv")?;
     cmd
         .arg("--gfa")
         .arg("/home/svorbrugg_local/Rust/gSV/example_data/testGraph.gfa")
