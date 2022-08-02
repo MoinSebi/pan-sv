@@ -63,7 +63,7 @@ pub fn writing_bed(r: &BubbleWrapper, index2: & HashMap<String, Vec<usize>>, pat
     let f = File::create([out, "bed"].join(".")).expect("Unable to create file");
     let mut f = BufWriter::new(f);
 
-    for (_k,v) in r.id2interval.iter() {
+    for v in r.id2interval.iter() {
         let from_id: usize = index2.get(&paths[v.acc as usize].name).unwrap()[v.from as usize];
         let mut to_id:usize = index2.get(&paths[v.acc as usize].name).unwrap()[v.to as usize-1];
 
@@ -100,7 +100,9 @@ pub fn writing_bed2(r: &BubbleWrapper, index2: & hashbrown::HashMap<String, Vec<
         let (max, min, _mean) = bub.traversal_stats();
         for x in bub.traversals.iter() {
             for x1 in x.1.pos.iter() {
-                let pos = p.get(&x1).unwrap();
+                println!("id {}",x1);
+                println!("len {}",p.len());
+                let pos = p.get(*x1 as usize).unwrap();
                 let from_id: usize = index2.get(&paths[pos.acc as usize].name).unwrap()[pos.from as usize];
                 let mut to_id: usize = index2.get(&paths[pos.acc as usize].name).unwrap()[pos.to as usize - 1];
                 if pos.to == pos.from + 1 {
@@ -135,7 +137,7 @@ pub fn writing_bed_traversals(h: &BubbleWrapper, index2: & HashMap<String, Vec<u
         for y in x.1.traversals.iter(){
             for x1 in y.1.pos.iter(){
 
-                let k = h.id2interval.get(&x1).unwrap();
+                let k = h.id2interval.get(*x1 as usize).unwrap();
                 let from_id: usize = index2.get(&paths[k.acc as usize].name).unwrap()[k.from as usize];
                 let mut to_id:usize = index2.get(&paths[k.acc as usize].name).unwrap()[k.to as usize-1];
                 if k.to == k.from+1{

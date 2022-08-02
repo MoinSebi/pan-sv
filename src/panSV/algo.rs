@@ -268,7 +268,7 @@ pub fn create_bubbles(inp: & HashMap<String, Vec<PanSVpos>>, p: &   Vec<NPath>, 
 
                 bcount += 1;
             }
-            result.id2interval.insert(tcount, Posindex {from: pos.start.clone(), to: pos.end.clone(), acc: i as u32});
+            result.id2interval.push(Posindex {from: pos.start.clone(), to: pos.end.clone(), acc: i as u32});
 
             tcount += 1;
 
@@ -292,7 +292,7 @@ pub fn create_bubbles(inp: & HashMap<String, Vec<PanSVpos>>, p: &   Vec<NPath>, 
 /// If two nodes after each othera are borders of bubbles
 /// Add traversal to bubble
 pub fn indel_detection(r: & mut BubbleWrapper, paths: &Vec<NPath>, last_id: u32){
-    let mut ll = last_id.clone() + 1;
+    let mut ll = last_id.clone();
 
     for (i, path) in paths.iter().enumerate(){
         for x in 0..path.nodes.len()-1{
@@ -304,7 +304,7 @@ pub fn indel_detection(r: & mut BubbleWrapper, paths: &Vec<NPath>, last_id: u32)
 
                 let k: Vec<(u32, bool)> = vec![];
                 let jo: Traversal = Traversal::new(ll, 0);
-                r.id2interval.insert(ll, Posindex { from: (x as u32), to: ((x + 1) as u32), acc: i as u32});
+                r.id2interval.push(Posindex { from: (x as u32), to: ((x + 1) as u32), acc: i as u32});
                 r.id2id.insert(((x as u32), ((x + 1) as u32), i as u32), bub.id.clone());
                 if bub.traversals.contains_key(&k) {
                     bub.traversals.get_mut(&k).unwrap().pos.push(ll);
