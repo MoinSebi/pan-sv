@@ -376,14 +376,8 @@ pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, result:  Bubbl
     // for (k,v) in rr.lock().unwrap().iter(){
     //     connect_bubbles(&v, result, &(p2i.get(k).unwrap().clone() as u32))
     // }
-    let res = test.lock().unwrap();
-    let mut result1 = BubbleWrapper::new();
-    result1.id2bubble = res.id2bubble.clone();
-    result1.id2id = res.id2id.clone();
-    result1.anchor2bubble = res.anchor2bubble.clone();
-    result1.id2interval = res.id2interval.clone();
-
-    result1
+    let rr = test.lock().unwrap().clone();
+    rr
 
 }
 
