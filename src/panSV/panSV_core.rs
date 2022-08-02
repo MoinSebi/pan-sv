@@ -44,7 +44,7 @@ impl BubbleWrapper{
         let id2bubble: HashMap<u32, Bubble> = HashMap::new();
         let id2interval: HashMap<u32, Posindex> = HashMap::new();
         let anchor2bubble: HashMap<(u32, u32), u32> = HashMap::new();
-        let anchor2interval: HashMap<(& u32, & u32, & String), u32> = HashMap::new();
+        //let anchor2interval: HashMap<(& u32, & u32, & String), u32> = HashMap::new();
         let id2id: HashMap<(u32, u32, u32), u32> = HashMap::new();
 
         Self{

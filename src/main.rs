@@ -15,7 +15,7 @@ use std::process;
 use crate::panSV::panSV_core::{BubbleWrapper, PanSVpos};
 use gfaR_wrapper::{NGfa, GraphWrapper};
 use log::{info, LevelFilter, warn};
-use crate::core::writer::{writing_traversals, writing_bed, bubble_naming_new, bubble_parent_structure, writing_bed_traversals};
+use crate::core::writer::{writing_traversals, writing_bed, bubble_naming_new, bubble_parent_structure, writing_bed_traversals, writing_bed2};
 use std::io::Write;
 use crate::core::logging::newbuilder;
 
@@ -127,7 +127,7 @@ fn main() {
         info!("Counting nodes");
         counts.counting_graph(&graph);
     }
-    bi_wrapper = algo_panSV_multi(&graph.paths, &counts, &4);
+    bi_wrapper = algo_panSV_multi(&graph.paths, &counts, &threads);
     bub_wrapper = create_bubbles(&bi_wrapper, &graph.paths, &g2p, &graph.path2id, &threads);
     info!("Indel detection");
     let interval_numb = bub_wrapper.id2interval.len() as u32;
@@ -153,7 +153,7 @@ fn main() {
 
 
     info!("Writing bed");
-    writing_bed(&bub_wrapper, &g2p, &graph.paths, outprefix);
+    writing_bed2(&bub_wrapper, &g2p, &graph.paths, outprefix);
     writing_bed_traversals(&bub_wrapper, &g2p, &graph.paths, outprefix);
 
 
