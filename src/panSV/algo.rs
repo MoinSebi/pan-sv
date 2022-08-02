@@ -153,6 +153,7 @@ pub fn sort_trav(result:  HashMap<String, Vec<PanSVpos>>) -> HashMap<String, Vec
         //v.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
     }
+    new_result.shrink_to_fit();
     new_result
 }
 
@@ -275,6 +276,10 @@ pub fn create_bubbles(inp: & HashMap<String, Vec<PanSVpos>>, p: &   Vec<NPath>, 
         }
 
     }
+    result.id2bubble.shrink_to_fit();
+    result.anchor2bubble.shrink_to_fit();
+    result.id2interval.shrink_to_fit();
+    result.id2id.shrink_to_fit();
     // Connect bubbles
     connect_bubbles_multi(inp, result, path2index, threads)
 
@@ -379,7 +384,11 @@ pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, result:  Bubbl
     // }
 
     let u = Arc::try_unwrap(test).unwrap();
-    let u = u.into_inner().unwrap();
+    let mut u = u.into_inner().unwrap();
+    u.id2bubble.shrink_to_fit();
+    u.anchor2bubble.shrink_to_fit();
+    u.id2interval.shrink_to_fit();
+    u.id2id.shrink_to_fit();
     u
 
 }

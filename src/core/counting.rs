@@ -31,6 +31,7 @@ impl CountNode{
                 *count.get_mut(&y).unwrap() += 1;
             }
         }
+        count.shrink_to_fit();
         self.ncount  = count;
     }
 
