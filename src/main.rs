@@ -4,7 +4,7 @@ mod core;
 #[allow(non_snake_case)]
 mod panSV;
 
-use std::collections::HashMap;
+use hashbrown::HashMap;
 use std::env::args;
 use crate::core::counting::{CountNode};
 use crate::panSV::algo::{create_bubbles, indel_detection, check_bubble_size, nest_version2, algo_panSV_multi};

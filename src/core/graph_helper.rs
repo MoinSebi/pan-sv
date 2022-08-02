@@ -1,4 +1,5 @@
-use std::collections::HashMap;
+use hashbrown::HashMap;
+
 
 
 /// Convert index in the graph to positional information

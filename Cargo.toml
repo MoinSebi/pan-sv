@@ -13,7 +13,7 @@ edition = "2018"
 related_intervals = {git = "https://github.com/MoinSebi/nested_intervals"}
 clap = "=3.0.0-beta.4"
 gfaR_wrapper = {git = "https://github.com/MoinSebi/gfaR_wrapper"}
-
+hashbrown = "0.12"
 bifurcation = {git = "https://github.com/MoinSebi/bifurcation"}
 
 log = "0.4.0"

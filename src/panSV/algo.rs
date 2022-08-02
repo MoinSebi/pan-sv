@@ -1,5 +1,5 @@
 use std::cmp::{max, min};
-use std::collections::{HashMap, BTreeSet};
+use std::collections::{BTreeSet};
 use crate::core::counting::{CountNode};
 use crate::panSV::panSV_core::{PanSVpos, TmpPos, BubbleWrapper};
 use crate::core::core::{Posindex, Bubble, Traversal};
@@ -10,7 +10,9 @@ use std::ops::Add;
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::thread;
 use bifurcation::helper::chunk_inplace;
+use hashbrown::HashMap;
 use log::info;
+
 
 pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: &CountNode, threads: &usize) -> HashMap<String, Vec<PanSVpos>>{
 
@@ -383,7 +385,7 @@ pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, result:  Bubbl
 }
 
 /// Conntect bubbles and add children and parents
-pub fn connect_bubbles(hm: &HashMap<(u32, u32), Network>, mut result: MutexGuard<BubbleWrapper>, s: &u32){
+pub fn connect_bubbles(hm: &std::collections::HashMap<(u32, u32), Network>, mut result: MutexGuard<BubbleWrapper>, s: &u32){
     for (k,v) in hm.iter(){
         let index = &result.id2id.get(&(k.0, k.1, s.clone())).unwrap().clone();
         let mut ii: Vec<u32> = Vec::new();
