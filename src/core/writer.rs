@@ -96,24 +96,29 @@ pub fn writing_bed2(r: &BubbleWrapper, index2: & HashMap<String, Vec<usize>>, pa
     let mut f = BufWriter::new(f);
 
     for (k, bub) in r.id2bubble.iter() {
+        let (max, min, _mean) = bub.traversal_stats();
         for x in bub.traversals.iter() {
-            let pos = r.id2interval.get(&x.1.id).unwrap();
-            let from_id: usize = index2.get(&paths[pos.acc as usize].name).unwrap()[pos.from as usize];
-            let mut to_id: usize = index2.get(&paths[pos.acc as usize].name).unwrap()[pos.to as usize - 1];
-            if pos.to == pos.from + 1 {
-                to_id = from_id.clone();
+            for x1 in x.1.pos.iter() {
+                let pos = r.id2interval.get(&x1).unwrap();
+                let from_id: usize = index2.get(&paths[pos.acc as usize].name).unwrap()[pos.from as usize];
+                let mut to_id: usize = index2.get(&paths[pos.acc as usize].name).unwrap()[pos.to as usize - 1];
+                if pos.to == pos.from + 1 {
+                    to_id = from_id.clone();
+                }
+
+
+
+                write!(f, "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+                       pos.acc,
+                       from_id,
+                       to_id,
+                       bub.id,
+                       bub.core,
+                       bub.category,
+                       bub.small,
+                       max,
+                       min).expect("Not able to write to file");
             }
-            let (max, min, _mean) = bub.traversal_stats();
-            write!(f, "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
-                   pos.acc,
-                   from_id,
-                   to_id,
-                   bub.id,
-                   bub.core,
-                   bub.category,
-                   bub.small,
-                   max,
-                   min).expect("Not able to write to file");
         }
     }
 }

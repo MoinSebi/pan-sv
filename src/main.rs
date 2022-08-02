@@ -84,7 +84,7 @@ fn main() {
 
     //-------------------------------------------------------------------------------------------------
 
-    info!("Welcome to panSV");
+    info!("Welcome to pan-sv");
     let threads= matches.value_of("threads").unwrap().parse().unwrap();
 
     // Check if graph is running
@@ -115,7 +115,6 @@ fn main() {
 
 
     let mut counts: CountNode = CountNode::new();
-    info!("Counting nodes");
     if matches.is_present("delimiter"){
         let mut gra_wrapper: GraphWrapper = GraphWrapper::new();
         gra_wrapper.from_ngfa(&graph, matches.value_of("delimiter").unwrap());
@@ -154,7 +153,9 @@ fn main() {
 
     info!("Writing bed");
     writing_bed2(&bub_wrapper, &g2p, &graph.paths, outprefix);
-    writing_bed_traversals(&bub_wrapper, &g2p, &graph.paths, outprefix);
+
+
+    //writing_bed_traversals(&bub_wrapper, &g2p, &graph.paths, outprefix);
 
 
     // if matches.is_present("traversal"){

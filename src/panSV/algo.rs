@@ -318,7 +318,7 @@ pub fn indel_detection(r: & mut BubbleWrapper, paths: &Vec<NPath>, last_id: u32)
 ///
 ///
 pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, result: &  mut BubbleWrapper, p2i: &HashMap<String, usize>, threads: &usize){
-
+    info!("Connect bubbles");
 
     let mut g = Vec::new();
     for (k,v) in hm.iter(){
@@ -357,6 +357,7 @@ pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, result: &  mut
         handle.join().unwrap()
 
     }
+    info!("Connecting");
     for (k,v) in rr.lock().unwrap().iter(){
         connect_bubbles(&v, result, &(p2i.get(k).unwrap().clone() as u32))
     }
