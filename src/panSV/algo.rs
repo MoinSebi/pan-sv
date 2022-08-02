@@ -274,9 +274,8 @@ pub fn create_bubbles(inp: & HashMap<String, Vec<PanSVpos>>, p: &   Vec<NPath>, 
 
     }
     // Connect bubbles
-    let ress = connect_bubbles_multi(inp, result, path2index, threads);
+    connect_bubbles_multi(inp, result, path2index, threads)
 
-    ress
 
 }
 
@@ -376,8 +375,10 @@ pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, result:  Bubbl
     // for (k,v) in rr.lock().unwrap().iter(){
     //     connect_bubbles(&v, result, &(p2i.get(k).unwrap().clone() as u32))
     // }
-    let rr = test.lock().unwrap().clone();
-    rr
+
+    let u = Arc::try_unwrap(test).unwrap();
+    let u = u.into_inner().unwrap();
+    u
 
 }
 
