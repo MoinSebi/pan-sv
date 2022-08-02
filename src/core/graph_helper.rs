@@ -11,7 +11,7 @@ pub fn graph2pos(graph: & gfaR_wrapper::NGfa) -> HashMap<String, Vec<usize>>{
         let mut vec_pos: Vec<usize> = Vec::new();
         let mut position: usize = 0;
         for y in x.nodes.iter(){
-            position += graph.nodes.get(y).unwrap().seq.len();
+            position += graph.nodes.get(y).unwrap().len;
             vec_pos.push(position);
         }
         result_hm.insert(x.name.clone(), vec_pos);

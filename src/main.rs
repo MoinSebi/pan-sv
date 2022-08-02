@@ -105,7 +105,7 @@ fn main() {
 
     // Read the graph
     let mut graph: NGfa = NGfa::new();
-    graph.from_graph(graph_file);
+    graph.from_file_direct2(graph_file);
 
     // Counting nodes
     let mut bub_wrapper: BubbleWrapper;

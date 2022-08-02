@@ -190,7 +190,7 @@ checksum = "6c977c9e9065a5c3a2188b997a812e24b2f009042bf299587886729f59f4b7f8"
 [[package]]
 name = "gfaR_wrapper"
 version = "0.1.0"
-source = "git+https://github.com/MoinSebi/gfaR_wrapper#836439095ac210f672a4c3dddb615642b3e82855"
+source = "git+https://github.com/MoinSebi/gfaR_wrapper#b1c51acdf951fdff63dee9fe1cfa7508915daeab"
 dependencies = [
  "gfaR",
  "hashbrown",
