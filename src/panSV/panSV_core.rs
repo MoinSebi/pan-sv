@@ -26,8 +26,8 @@ pub struct TmpPos {
 /// - anchor2interval: Posindex (reference) -> number of interval
 /// - id2id: Welches posindex gehoert in welche bubble.
 pub struct BubbleWrapper{
-    pub id2bubble: HashMap<u32, Bubble>,
-    pub id2interval: Vec<Posindex>,
+    pub bubbles: Vec<Bubble>,
+    pub intervals: Vec<Posindex>,
 
     // change this
     pub anchor2bubble: HashMap<(u32, u32), u32>,
@@ -41,7 +41,7 @@ impl BubbleWrapper{
     ///
     /// All values are empty
     pub fn new() -> Self {
-        let id2bubble: HashMap<u32, Bubble> = HashMap::new();
+        let id2bubble: Vec<Bubble> = Vec::new();
         let id2interval: Vec<Posindex> = Vec::new();
         let anchor2bubble: HashMap<(u32, u32), u32> = HashMap::new();
         //let anchor2interval: HashMap<(& u32, & u32, & String), u32> = HashMap::new();
@@ -49,8 +49,8 @@ impl BubbleWrapper{
 
         Self{
             id2id: id2id,
-            id2bubble: id2bubble,
-            id2interval: id2interval,
+            bubbles: id2bubble,
+            intervals: id2interval,
             anchor2bubble: anchor2bubble,
             //anchor2interval: anchor2interval,
         }

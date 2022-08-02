@@ -129,7 +129,7 @@ fn main() {
     bi_wrapper = algo_panSV_multi(&graph.paths, &counts, &threads);
     bub_wrapper = create_bubbles(&bi_wrapper, &graph.paths, &g2p, &graph.path2id, &threads);
     info!("Indel detection");
-    let interval_numb = bub_wrapper.id2interval.len() as u32;
+    let interval_numb = bub_wrapper.intervals.len() as u32;
     indel_detection(& mut bub_wrapper, &graph.paths, interval_numb);
 
 
@@ -145,8 +145,8 @@ fn main() {
 
 
     info!("Writing stats");
-    bubble_naming_new(&bub_wrapper.id2bubble, outprefix);
-    bubble_parent_structure(&bub_wrapper.id2bubble, outprefix);
+    bubble_naming_new(&bub_wrapper.bubbles, outprefix);
+    bubble_parent_structure(&bub_wrapper.bubbles, outprefix);
 
 
 

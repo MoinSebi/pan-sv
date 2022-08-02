@@ -215,20 +215,20 @@ pub fn create_bubbles(inp: & HashMap<String, Vec<PanSVpos>>, p: &   Vec<NPath>, 
 
                 // This bubble we are looking at
                 let temp_bcount = result.anchor2bubble.get(&newbub).unwrap();
-                let bub = result.id2bubble.get_mut(temp_bcount).unwrap();
+                let bub = result.bubbles.get_mut(*temp_bcount as usize).unwrap();
                 //result.anchor2interval.insert((&pos.start, &pos.end, &x.name), tcount);
                 let bub_id = bub.id.clone();
 
                 // Check if traversal already there
                 if bub.traversals.contains_key(&k10){
-                    result.id2bubble.get_mut(temp_bcount).unwrap().traversals.get_mut(&k10).unwrap().add_pos(tcount);
+                    result.bubbles.get_mut(*temp_bcount as usize).unwrap().traversals.get_mut(&k10).unwrap().add_pos(tcount);
 
                     //pV.id2bubble.get_mut(temp_bcount).unwrap().traversals.get_mut(&k).unwrap().addPos(tcount);
                 }
                 else {
 
-                    result.id2bubble.get_mut(temp_bcount).unwrap().traversals.insert(k10.clone(),tt);
-                    result.id2bubble.get_mut(temp_bcount).unwrap().traversals.get_mut(&k10).unwrap().id = trcount;
+                    result.bubbles.get_mut(*temp_bcount as usize).unwrap().traversals.insert(k10.clone(), tt);
+                    result.bubbles.get_mut(*temp_bcount as usize).unwrap().traversals.get_mut(&k10).unwrap().id = trcount;
                     trcount += 1;
                     //pV.id2bubble.get_mut(temp_bcount).unwrap().traversals.insert(k,tt);
 
@@ -255,9 +255,9 @@ pub fn create_bubbles(inp: & HashMap<String, Vec<PanSVpos>>, p: &   Vec<NPath>, 
 
 
                 result.anchor2bubble.insert(newbub, bcount);
-                result.id2bubble.insert(bcount, Bubble::new(pos.core.clone(), x.nodes[pos.start as usize].clone(), x.nodes[pos.end as usize].clone(),
-                                                            tcount, bcount, tt, k10.clone()));
-                result.id2bubble.get_mut(&bcount).unwrap().traversals.get_mut(&k10).unwrap().id = trcount;
+                result.bubbles.push(Bubble::new(pos.core.clone(), x.nodes[pos.start as usize].clone(), x.nodes[pos.end as usize].clone(),
+                                                tcount, bcount, tt, k10.clone()));
+                result.bubbles.get_mut(bcount as usize).unwrap().traversals.get_mut(&k10).unwrap().id = trcount;
 
                 //result.anchor2interval.insert((&pos.start, &pos.end, &x.name), tcount);
                 result.id2id.insert((pos.start.clone(), pos.end.clone(), i as u32), bcount);
@@ -268,7 +268,7 @@ pub fn create_bubbles(inp: & HashMap<String, Vec<PanSVpos>>, p: &   Vec<NPath>, 
 
                 bcount += 1;
             }
-            result.id2interval.push(Posindex {from: pos.start.clone(), to: pos.end.clone(), acc: i as u32});
+            result.intervals.push(Posindex {from: pos.start.clone(), to: pos.end.clone(), acc: i as u32});
 
             tcount += 1;
 
@@ -276,9 +276,9 @@ pub fn create_bubbles(inp: & HashMap<String, Vec<PanSVpos>>, p: &   Vec<NPath>, 
         }
 
     }
-    result.id2bubble.shrink_to_fit();
+    result.bubbles.shrink_to_fit();
     result.anchor2bubble.shrink_to_fit();
-    result.id2interval.shrink_to_fit();
+    result.intervals.shrink_to_fit();
     result.id2id.shrink_to_fit();
     // Connect bubbles
     connect_bubbles_multi(inp, result, path2index, threads)
@@ -299,12 +299,12 @@ pub fn indel_detection(r: & mut BubbleWrapper, paths: &Vec<NPath>, last_id: u32)
             let mut ind: (u32, u32) = (min(path.nodes[x],path.nodes[x+1] ), max(path.nodes[x],path.nodes[x+1]));
             if r.anchor2bubble.contains_key(&ind){
 
-                let bub =  r.id2bubble.get_mut(r.anchor2bubble.get(&ind).unwrap()).unwrap();
+                let bub =  r.bubbles.get_mut(*r.anchor2bubble.get(&ind).unwrap() as usize).unwrap();
                 //if ! bub.acc.contains(& path.name) {
 
                 let k: Vec<(u32, bool)> = vec![];
                 let jo: Traversal = Traversal::new(ll, 0);
-                r.id2interval.push(Posindex { from: (x as u32), to: ((x + 1) as u32), acc: i as u32});
+                r.intervals.push(Posindex { from: (x as u32), to: ((x + 1) as u32), acc: i as u32});
                 r.id2id.insert(((x as u32), ((x + 1) as u32), i as u32), bub.id.clone());
                 if bub.traversals.contains_key(&k) {
                     bub.traversals.get_mut(&k).unwrap().pos.push(ll);
@@ -385,9 +385,9 @@ pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, result:  Bubbl
 
     let u = Arc::try_unwrap(test).unwrap();
     let mut u = u.into_inner().unwrap();
-    u.id2bubble.shrink_to_fit();
+    u.bubbles.shrink_to_fit();
     u.anchor2bubble.shrink_to_fit();
-    u.id2interval.shrink_to_fit();
+    u.intervals.shrink_to_fit();
     u.id2id.shrink_to_fit();
     u
 
@@ -403,8 +403,8 @@ pub fn connect_bubbles(hm: &std::collections::HashMap<(u32, u32), Network>, mut 
             ii.push(ko);
         }
         for x in ii.iter(){
-            result.id2bubble.get_mut(x).unwrap().children.insert(index.clone());
-            result.id2bubble.get_mut(index).unwrap().parents.insert(x.clone().clone());
+            result.bubbles.get_mut(*x as usize).unwrap().children.insert(index.clone());
+            result.bubbles.get_mut(*index as usize).unwrap().parents.insert(x.clone().clone());
         }
 
     }
@@ -416,12 +416,12 @@ pub fn connect_bubbles(hm: &std::collections::HashMap<(u32, u32), Network>, mut 
 /// - Categories (additional function)
 /// -
 pub fn check_bubble_size(h: & mut BubbleWrapper){
-    let k: Vec<u32> = h.id2bubble.keys().copied().collect();
-    for x in k.iter(){
+
+    for x in 0..h.bubbles.len(){
         let mut min = u32::MAX;
 
         let mut max = u32::MIN;
-        let bubble = h.id2bubble.get_mut(x).unwrap();
+        let bubble = h.bubbles.get_mut(x).unwrap();
         for x in bubble.traversals.iter() {
             if x.1.length > max {
                 max = x.1.length.clone();
@@ -504,9 +504,9 @@ pub fn check_bubble_size(h: & mut BubbleWrapper){
 #[allow(dead_code)]
 /// Get the real nestedness
 pub fn nest_version2(h: & mut BubbleWrapper){
-    for x in 0..h.id2bubble.len(){
+    for x in 0..h.bubbles.len(){
         let level = go1(x as u32, h) as u16;
-        let g = h.id2bubble.get_mut(&(x as u32)).unwrap();
+        let g = h.bubbles.get_mut(x).unwrap();
         g.nestedness = level;
     }
 }
@@ -514,7 +514,7 @@ pub fn nest_version2(h: & mut BubbleWrapper){
 #[allow(dead_code)]
 /// Function for nest_version2
 pub fn go1(id: u32, h: & mut BubbleWrapper) -> usize{
-    let mut bubble = h.id2bubble.get(&id).unwrap();
+    let mut bubble = h.bubbles.get(id as usize).unwrap();
     let mut  count: usize = 0;
     loop {
         count += 1;
@@ -525,7 +525,7 @@ pub fn go1(id: u32, h: & mut BubbleWrapper) -> usize{
         let parent = bubble.parents.iter().next().unwrap().clone();
         eprintln!("parent2 {}", bubble.parents.len());
 
-        bubble = h.id2bubble.get(&parent).unwrap();
+        bubble = h.bubbles.get(parent as usize).unwrap();
     }
      return count
 }
