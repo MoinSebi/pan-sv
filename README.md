@@ -1,6 +1,6 @@
 # pan-sv
 
-Bubble detection using pan-level approach in variation graphs.
+Bubble detection using pan-level approach in variation graphs. Reporting variation represented in the graph itself. PanSV has two output files: 1) bubbles statistic and 2) BED file for start and end position found in all sequences in the graph. 
 
 ##Installation 
 
@@ -48,6 +48,10 @@ OPTIONS:
 ./pan-sv -g data/testGraph.gfa -o panSV.out
 ```
 
+**TODO**
+- [ ] Add multithreading in bubble creation 
+- [ ] Remove some INFO messages
+- [ ] Add some additional output options
 
 
 ### Output
