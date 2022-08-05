@@ -2,40 +2,47 @@
 Explanation about the main output files from pan-sv. Some additional files are not listed here.
 
 
-####Bubble stats (prefix.bubble.stats)
+## Bubble stats (prefix.bubble.stats)
 
-| Col | Type  | Description                                   |
-|-----|-------|-----------------------------------------------|
-| 1   | int   | Bubble id                                     |
-| 2   | int   | Nestedness                                    |
-| 3   | int   | Number of sub bubbles                         |
-| 4   | int   | Minimal length of the bubble                  |
-| 5   | int   | Maximum length of the bubble                  |
-| 6   | float | Mean length of the bubble                     |
-| 7   | int   | Number of traversals                          |
-| 8   | int   | Number of intervals                           |
-| 9   | int   | Parent names (bubble id) (separated by comma) |
-| 10  | int   | Anchor 1                                      |
-| 11  | int   | Anchor 2                                      |
-| 12  | float | Ratio Min/Max                                 |
-| 13  | Bool  | Small                                         |
-| 14  | int   | Type (see below)                              | 
+| Col | Type   | Description                                   |
+|-----|--------|-----------------------------------------------|
+| 1   | int    | Bubble id                                     |
+| 2   | int    | Number of sub bubbles                         |
+| 3   | int    | Minimal length of the bubble                  |
+| 4   | int    | Maximum length of the bubble                  |
+| 5   | float  | Mean length of the bubble                     |
+| 6   | int    | Number of traversals                          |
+| 7   | int    | Number of intervals                           |
+| 8   | int    | Parent names (bubble id) (separated by comma) |
+| 9   | int    | Anchor 1                                      |
+| 10  | int    | Anchor 2                                      |
+| 11  | float  | Ratio Min/Max                                 |
+| 12  | Bool   | Small                                         |
+| 13  | int    | Type                                          | 
+| 14  | String | Tags                                          | 
 
-Flags: 
+Tags: 
 - CL: Core level
+- NL: Nestedness level (depth in a bubble)
 
-### Type in bubble stats
+## Type in bubble stats
+**Info:**  
+Ratio: Smallest traversal / Biggest traversal  
+Small: Biggest traversal < 50 bp   
+Big: Biggest traversal >= 50 bp  
 
-| Number | Description                |
-|--------|----------------------------|
-| 0      | SNP                        |
-| 1      | Indel (small)              |
-| 2      | MNP                        |
-| 3      | Indel (big)                |
-| 4      | Different size (Ratio<0.9) |
-| 5      | Same size (Ratio>0.9)      |
+| Number | Description                | Size   |
+|--------|----------------------------|--------|
+| 0      | SNP                        | small  |
+| 1      | Indel (Ratio = 0)          | small  |
+| 2      | MNP (Ratio != 0)           | small  |
+| 3      | Indel (Ratio = 0)          | big    |
+| 4      | Different size (Ratio<0.9) | big    |
+| 5      | Same size (Ratio>0.9)      | big    |
 
-### Bed output
+
+
+## Bed output
 | Col | Type   | Description                         |
 |-----|--------|-------------------------------------|
 | 1   | String | Genome name                         |
