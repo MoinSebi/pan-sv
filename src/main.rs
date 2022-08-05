@@ -144,9 +144,9 @@ fn main() {
     }
 
 
-    info!("Writing stats");
+    info!("Writing bubble stats");
     bubble_naming_new(&bub_wrapper.bubbles, outprefix);
-    bubble_parent_structure(&bub_wrapper.bubbles, outprefix);
+    //bubble_parent_structure(&bub_wrapper.bubbles, outprefix);
 
 
 
