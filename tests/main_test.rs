@@ -19,8 +19,8 @@ fn main_solo() -> Result<(), Box<dyn std::error::Error>> {
         .arg("./data/example_data/test1");
 
     cmd.assert().success();
-    let foo: String = fs::read_to_string("data/example_data/test1.bubble.txt").unwrap();
-    assert_eq!(foo.contains("1	{2}	{0}"), true);
+    let foo: String = fs::read_to_string("data/example_data/test1.bubble.stats").unwrap();
+    assert_eq!(foo.contains("0	2	11	26"), true);
 
     let path = "data/example_data";
     fs::remove_dir_all(path).unwrap();
