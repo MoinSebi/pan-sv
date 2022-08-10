@@ -201,7 +201,6 @@ pub fn create_bubbles_stupid(inp: & HashMap<String, Vec<PanSVpos>>, paths: &   V
 
     let u = Arc::try_unwrap(arc_yo).unwrap();
     let mut u = u.into_inner().unwrap();
-    println!("uuu {:?}", u);
     let p = merge_bubbles(&u);
     (u, p)
 }
@@ -217,7 +216,6 @@ pub fn merge_bubbles2(input: Vec<((u32, u32), usize, Posindex, u32)>, f: &mut Mu
 
 
 pub fn merge_bubbles(input: &HashMap<(u32, u32, u32), Vec<(usize, Posindex)>>) ->  BubbleWrapper{
-    println!("{:?}", input);
     let mut bw = BubbleWrapper::new();
     for (i,x) in input.iter().enumerate(){
         for y in x.1.iter(){
@@ -225,14 +223,12 @@ pub fn merge_bubbles(input: &HashMap<(u32, u32, u32), Vec<(usize, Posindex)>>) -
             bw.id2id.insert((y.1.from.clone(), y.1.to.clone(), y.1.acc.clone()), i as u32);
         }
     }
-    println!("this is bw {:?}", bw);
     bw
 }
 
 pub fn merge1(input: HashMap<(u32, u32, u32), Vec<(usize, Posindex)>>, paths: &   Vec<NPath>,path2index: &HashMap<String, usize>, bw: &mut BubbleWrapper){
     let f: Vec<((u32, u32, u32), Vec<(usize, Posindex)>)> = input.into_iter().map(|(x,y)| (x,y)).collect();
 
-    println!("fuuu {:?}", &f);
     let chunks = chunk_inplace(f, 2);
     let mut res = Vec::new();
     let arc_res = Arc::new(Mutex::new(res));
@@ -278,12 +274,10 @@ pub fn merge1(input: HashMap<(u32, u32, u32), Vec<(usize, Posindex)>>, paths: & 
                         ss.push(k10);
                         go.push(vec![l as u32, o.clone()])
                     }
-                    info!("go {:?}", go);
 
                 }
                 gg.push((y.0, go));
             }
-            info!("gg {:?}", gg);
                 let mut ff = arc_res2.lock().unwrap();
                 ff.extend(gg);
 
@@ -311,7 +305,6 @@ pub fn make_bubbles(bw: &mut BubbleWrapper,  u: Vec<((u32, u32, u32), Vec<Vec<u3
         fh.insert((bub.0, bub.1), i as u32);
         f.push(Bubble::new2(bub.2, bub.0, bub.1, i as u32, t, 10))
     }
-    println!("daksljdkashdjkas s{:?}", u);
     f.shrink_to_fit();
     fh.shrink_to_fit();
     bw.bubbles = f;
@@ -464,11 +457,7 @@ pub fn make_bubbles(bw: &mut BubbleWrapper,  u: Vec<((u32, u32, u32), Vec<Vec<u3
 //                 let jo: Traversal = Traversal::new(ll, 0);
 //                 r.intervals.push(Posindex { from: (x as u32), to: ((x + 1) as u32), acc: i as u32});
 //                 r.id2id.insert(((x as u32), ((x + 1) as u32), i as u32), bub.id.clone());
-//                 if bub.traversals.contains_key(&k) {
-//                     bub.traversals.get_mut(&k).unwrap().pos.push(ll);
-//                 } else {
-//                     bub.traversals.insert(k.clone(), jo);
-//                 }
+//                 bub.traversals.push(ll.clone());
 //                 ll += 1;
 //
 //                 //}
@@ -561,8 +550,6 @@ pub fn connect_bubbles(hm: &std::collections::HashMap<(u32, u32), Network>, mut 
             ii.push(ko);
         }
         for x in ii.iter(){
-            println!("index is {}", index);
-            println!("{:?}", result);
             result.bubbles.get_mut(*x as usize).unwrap().children.insert(index.clone());
             result.bubbles.get_mut(*index as usize).unwrap().parents.insert(x.clone().clone());
         }

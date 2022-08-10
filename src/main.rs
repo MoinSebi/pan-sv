@@ -119,13 +119,9 @@ fn main() {
     }
     bi_wrapper = algo_panSV_multi(&graph.paths, &counts, &threads);
     let (mut tmp1, mut bub_wrapper) = create_bubbles_stupid(&bi_wrapper, &graph.paths, &g2p, &graph.path2id, &threads);
-    info!("{:?}", bub_wrapper);
+    //info!("{:?}", bub_wrapper);
     merge1(tmp1, &graph.paths, &graph.path2id, &mut bub_wrapper);
-    info!("after mege 1 {:?}", bub_wrapper);
-    info!("after mege 1 {:?}", bi_wrapper);
     let mut o = connect_bubbles_multi(&bi_wrapper, bub_wrapper, &graph.path2id, &2);
-
-    info!("Indel detection");
     let interval_numb = o.intervals.len() as u32;
 
     //indel_detection(& mut bub_wrapper, &graph.paths, interval_numb);
