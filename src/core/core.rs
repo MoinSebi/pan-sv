@@ -28,7 +28,7 @@ pub struct Bubble {
     pub id: u32,
     pub children: HashSet<u32>,
     pub parents: HashSet<u32>,
-    pub traversals: HashMap<Vec<(u32, bool)>, Traversal>,
+    pub traversals: Vec<Traversal>,
     // this is kinda panSV specific
     pub core: u32,
 
@@ -59,7 +59,32 @@ impl Bubble {
             children: u2,
             parents: u3,
             id: i,
-            traversals: u4,
+            traversals: Vec::new(),
+            core: core,
+            small: true,
+            ratio: 0.0,
+            category: 0,
+            nestedness: 0
+
+        }
+    }
+
+    pub fn new2(core: u32, start: u32, end: u32, i: u32, groups: &Vec<Vec<u32>>, last: u32) -> Self{
+
+        let u2: HashSet<u32> = HashSet::new();
+        let u3: HashSet<u32> = HashSet::new();
+        let mut rr = Vec::with_capacity(groups.len());
+        for x in groups.iter(){
+            rr.push(Traversal{length: x[0], pos: x[1..].to_vec(), id: last});
+        }
+
+        Self {
+            start: start,
+            end: end,
+            children: u2,
+            parents: u3,
+            id: i,
+            traversals: rr,
             core: core,
             small: true,
             ratio: 0.0,
@@ -72,7 +97,7 @@ impl Bubble {
     /// Mean, max and min length of all traversals
     pub fn traversal_stats(&self) -> (u32, u32, f32){
         let mut all_length = Vec::new();
-        for (_k,v) in self.traversals.iter(){
+        for v in self.traversals.iter(){
             all_length.push(v.length);
         }
 
@@ -89,7 +114,7 @@ impl Bubble {
     /// Total number of intervals
     pub fn number_interval(&self) -> usize{
         let mut number = 0;
-        for (_k,v) in self.traversals.iter(){
+        for v in self.traversals.iter(){
             number += v.pos.len();
         }
         number
@@ -99,7 +124,7 @@ impl Bubble {
     /// Number of different accessions
     pub fn number_acc(&self, hm: &HashMap<u32, Posindex>) -> usize{
         let mut accession_numb= HashSet::new();
-        for (_k,v) in self.traversals.iter(){
+        for v in self.traversals.iter(){
             for x in v.pos.iter(){
                 accession_numb.insert(hm.get(x).unwrap().acc.clone());
             }

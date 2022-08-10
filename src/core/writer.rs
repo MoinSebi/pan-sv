@@ -98,7 +98,7 @@ pub fn writing_bed2(r: &BubbleWrapper, index2: & hashbrown::HashMap<String, Vec<
     for bub in p2.iter() {
         let (max, min, _mean) = bub.traversal_stats();
         for x in bub.traversals.iter() {
-            for x1 in x.1.pos.iter() {
+            for x1 in x.pos.iter() {
                 let pos = p.get(*x1 as usize).unwrap();
                 let from_id: usize = index2.get(&paths[pos.acc as usize].name).unwrap()[pos.from as usize];
                 let mut to_id: usize = index2.get(&paths[pos.acc as usize].name).unwrap()[pos.to as usize - 1];
@@ -132,7 +132,7 @@ pub fn writing_bed_traversals(h: &BubbleWrapper, index2: & HashMap<String, Vec<u
     let mut f = BufWriter::new(f);
     for x in h.bubbles.iter(){
         for y in x.traversals.iter(){
-            for x1 in y.1.pos.iter(){
+            for x1 in y.pos.iter(){
 
                 let k = h.intervals.get(*x1 as usize).unwrap();
                 let from_id: usize = index2.get(&paths[k.acc as usize].name).unwrap()[k.from as usize];
@@ -141,7 +141,7 @@ pub fn writing_bed_traversals(h: &BubbleWrapper, index2: & HashMap<String, Vec<u
                     to_id = from_id.clone();
                 }
                 let bub = h.bubbles.get(*h.id2id.get(&(k.from, k.to, k.acc)).unwrap() as usize).unwrap();
-                write!(f, "{}\t{}\t{}\t{}\t{}\t{}\n", k.acc, from_id, to_id, x.id, x.core, y.1.id).expect("Can't write traversal file");
+                write!(f, "{}\t{}\t{}\t{}\t{}\t{}\n", k.acc, from_id, to_id, x.id, x.core, y.id).expect("Can't write traversal file");
             }
 
 
@@ -151,28 +151,28 @@ pub fn writing_bed_traversals(h: &BubbleWrapper, index2: & HashMap<String, Vec<u
 
 
 
-/// Writing traversal file
-/// Printing:
-/// traversal Len bubble
-pub fn writing_traversals(h: &BubbleWrapper, out: &str){
-    let f = File::create([out, "traversal", "txt"].join(".")).expect("Unable to create file");
-    let mut f = BufWriter::new(f);
-    for x in h.bubbles.iter(){
-
-        for y in x.traversals.iter(){
-            let mut o: Vec<String> = Vec::new();
-            for x1 in y.0.iter(){
-                let j: String =  x1.0.to_string() + &bool2string_dir(x1.1);
-                o.push(j);
-
-            }
-
-            //write!(f, "{}\t{}\t{}\n", o.join(","), y.1.length, vec2string(&naming.hm.get(&x.1.id).unwrap(), ".")).expect("Can't write traversal file");
-            write!(f, "{}\t{}\t{}\n", o.join(","), y.1.length, y.1.id).expect("Can't write traversal file");
-
-        }
-    }
-}
+// /// Writing traversal file
+// /// Printing:
+// /// traversal Len bubble
+// pub fn writing_traversals(h: &BubbleWrapper, out: &str){
+//     let f = File::create([out, "traversal", "txt"].join(".")).expect("Unable to create file");
+//     let mut f = BufWriter::new(f);
+//     for x in h.bubbles.iter(){
+//
+//         for y in x.traversals.iter(){
+//             let mut o: Vec<String> = Vec::new();
+//             for x1 in y.iter(){
+//                 let j: String =  x1.0.to_string() + &bool2string_dir(x1.1);
+//                 o.push(j);
+//
+//             }
+//
+//             //write!(f, "{}\t{}\t{}\n", o.join(","), y.1.length, vec2string(&naming.hm.get(&x.1.id).unwrap(), ".")).expect("Can't write traversal file");
+//             write!(f, "{}\t{}\t{}\n", o.join(","), y.length, y.id).expect("Can't write traversal file");
+//
+//         }
+//     }
+// }
 
 
 // /// Writing traversal file

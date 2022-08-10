@@ -7,16 +7,17 @@ mod panSV;
 use hashbrown::HashMap;
 use std::env::args;
 use crate::core::counting::{CountNode};
-use crate::panSV::algo::{create_bubbles, indel_detection, check_bubble_size, nest_version2, algo_panSV_multi};
+use crate::panSV::algo::{check_bubble_size, nest_version2, algo_panSV_multi, create_bubbles_stupid, merge_bubbles, merge1};
 use crate::core::graph_helper::graph2pos;
 use clap::{Arg, App, AppSettings};
 use std::path::Path;
 use std::process;
 use crate::panSV::panSV_core::{BubbleWrapper, PanSVpos};
 use gfaR_wrapper::{NGfa, GraphWrapper};
-use log::{info, LevelFilter, warn};
-use crate::core::writer::{writing_traversals, writing_bed, bubble_naming_new, bubble_parent_structure, writing_bed_traversals, writing_bed2};
+use log::{debug, info, LevelFilter, warn};
+use crate::core::writer::{writing_bed, bubble_naming_new, bubble_parent_structure, writing_bed_traversals, writing_bed2};
 use std::io::Write;
+use crate::core::core::Posindex;
 use crate::core::logging::newbuilder;
 
 
@@ -98,7 +99,7 @@ fn main() {
     graph.from_file_direct2(graph_file);
 
     // Counting nodes
-    let mut bub_wrapper: BubbleWrapper;
+    let mut bub_wrapper: BubbleWrapper = BubbleWrapper::new();
     let bi_wrapper: HashMap<String, Vec<PanSVpos>>;
     let g2p = graph2pos(&graph);
 
@@ -117,10 +118,16 @@ fn main() {
         counts.counting_graph(&graph);
     }
     bi_wrapper = algo_panSV_multi(&graph.paths, &counts, &threads);
-    bub_wrapper = create_bubbles(&bi_wrapper, &graph.paths, &g2p, &graph.path2id, &threads);
+    let tmp_1 = create_bubbles_stupid(&bi_wrapper, &graph.paths, &g2p, &graph.path2id, &threads);
+    let p: HashMap<(u32, u32), Vec<(usize, Posindex)>> = HashMap::new();
+    let (mut p, mut bub_wrapper) = merge_bubbles(tmp_1);
+    info!("{}", p.len());
+    merge1(p, &graph.paths, &graph.path2id, &mut bub_wrapper);
+
     info!("Indel detection");
     let interval_numb = bub_wrapper.intervals.len() as u32;
-    indel_detection(& mut bub_wrapper, &graph.paths, interval_numb);
+
+    //indel_detection(& mut bub_wrapper, &graph.paths, interval_numb);
 
 
 
