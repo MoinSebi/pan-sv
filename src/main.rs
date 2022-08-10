@@ -7,7 +7,7 @@ mod panSV;
 use hashbrown::HashMap;
 use std::env::args;
 use crate::core::counting::{CountNode};
-use crate::panSV::algo::{check_bubble_size, nest_version2, algo_panSV_multi, create_bubbles_stupid, merge_bubbles, merge1};
+use crate::panSV::algo::{check_bubble_size, nest_version2, algo_panSV_multi, create_bubbles_stupid, merge_bubbles, merge1, connect_bubbles_multi};
 use crate::core::graph_helper::graph2pos;
 use clap::{Arg, App, AppSettings};
 use std::path::Path;
@@ -118,14 +118,15 @@ fn main() {
         counts.counting_graph(&graph);
     }
     bi_wrapper = algo_panSV_multi(&graph.paths, &counts, &threads);
-    let tmp_1 = create_bubbles_stupid(&bi_wrapper, &graph.paths, &g2p, &graph.path2id, &threads);
-    let p: HashMap<(u32, u32), Vec<(usize, Posindex)>> = HashMap::new();
-    let (mut p, mut bub_wrapper) = merge_bubbles(tmp_1);
-    info!("{}", p.len());
-    merge1(p, &graph.paths, &graph.path2id, &mut bub_wrapper);
+    let (mut tmp1, mut bub_wrapper) = create_bubbles_stupid(&bi_wrapper, &graph.paths, &g2p, &graph.path2id, &threads);
+    info!("{:?}", bub_wrapper);
+    merge1(tmp1, &graph.paths, &graph.path2id, &mut bub_wrapper);
+    info!("after mege 1 {:?}", bub_wrapper);
+    info!("after mege 1 {:?}", bi_wrapper);
+    let mut o = connect_bubbles_multi(&bi_wrapper, bub_wrapper, &graph.path2id, &2);
 
     info!("Indel detection");
-    let interval_numb = bub_wrapper.intervals.len() as u32;
+    let interval_numb = o.intervals.len() as u32;
 
     //indel_detection(& mut bub_wrapper, &graph.paths, interval_numb);
 
@@ -133,23 +134,23 @@ fn main() {
 
 
     info!("Categorize bubbles");
-    check_bubble_size(&mut bub_wrapper);
+    check_bubble_size(&mut o);
 
     if matches.is_present("Nestedness"){
         info!("Nestedness");
-        nest_version2(& mut bub_wrapper);
+        nest_version2(& mut o);
     }
 
 
     info!("Writing bubble stats");
-    bubble_naming_new(&bub_wrapper.bubbles, outprefix);
+    bubble_naming_new(&o.bubbles, outprefix);
     //bubble_parent_structure(&bub_wrapper.bubbles, outprefix);
 
 
 
 
     info!("Writing bed");
-    writing_bed2(&bub_wrapper, &g2p, &graph.paths, outprefix);
+    writing_bed2(&o, &g2p, &graph.paths, outprefix);
 
 
     //writing_bed_traversals(&bub_wrapper, &g2p, &graph.paths, outprefix);
