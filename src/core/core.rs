@@ -69,13 +69,17 @@ impl Bubble {
         }
     }
 
-    pub fn new2(core: u32, start: u32, end: u32, i: u32, groups: &Vec<Vec<u32>>, last: u32) -> Self{
+    pub fn new2(core: u32, start: u32, end: u32, i: u32, groups: Vec<Vec<u32>>, last: u32) -> Self{
 
         let u2: HashSet<u32> = HashSet::new();
         let u3: HashSet<u32> = HashSet::new();
         let mut rr = Vec::with_capacity(groups.len());
+        let mut h = last;
         for x in groups.iter(){
+            println!("{:?}", x);
+            println!("{:?}", x[1..].to_vec());
             rr.push(Traversal{length: x[0], pos: x[1..].to_vec(), id: last});
+            h += 1;
         }
 
         Self {

@@ -7,7 +7,7 @@ mod panSV;
 use hashbrown::HashMap;
 use std::env::args;
 use crate::core::counting::{CountNode};
-use crate::panSV::algo::{check_bubble_size, nest_version2, algo_panSV_multi, create_bubbles_stupid, merge_bubbles, merge1, connect_bubbles_multi};
+use crate::panSV::algo::{check_bubble_size, nest_version2, algo_panSV_multi, create_bubbles_stupid, bw_index, merge_traversals, connect_bubbles_multi};
 use crate::core::graph_helper::graph2pos;
 use clap::{Arg, App, AppSettings};
 use std::path::Path;
@@ -120,9 +120,11 @@ fn main() {
     bi_wrapper = algo_panSV_multi(&graph.paths, &counts, &threads);
     let (mut tmp1, mut bub_wrapper) = create_bubbles_stupid(&bi_wrapper, &graph.paths, &g2p, &graph.path2id, &threads);
     //info!("{:?}", bub_wrapper);
-    merge1(tmp1, &graph.paths, &graph.path2id, &mut bub_wrapper);
+    merge_traversals(tmp1, &graph.paths, &graph.path2id, &mut bub_wrapper);
+
     let mut o = connect_bubbles_multi(&bi_wrapper, bub_wrapper, &graph.path2id, &2);
     let interval_numb = o.intervals.len() as u32;
+    info!("print bw {:?}", o);
 
     //indel_detection(& mut bub_wrapper, &graph.paths, interval_numb);
 
