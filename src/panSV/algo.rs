@@ -386,7 +386,7 @@ pub fn indel_detection(r: &mut BubbleWrapper, paths: &Vec<NPath>, last_id: u32){
 /// Wrapper for connecting bubbles multithreaded
 ///
 ///
-pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, result:  BubbleWrapper, p2i: &HashMap<String, usize>, threads: &usize) -> BubbleWrapper{
+pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, mut result:  BubbleWrapper, p2i: &HashMap<String, usize>, threads: &usize) -> BubbleWrapper{
     info!("Connect bubbles");
 
     let mut g = Vec::new();
@@ -398,12 +398,11 @@ pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, result:  Bubbl
     //let rr = Arc::new(Mutex::new(Vec::new()));
     let mut go = Arc::new(Mutex::new(0));
 
-    let test = Arc::new(Mutex::new(result));
-    let te = Arc::new(p2i.clone());
     let te = Arc::new(p2i.clone());
 
     let mut handles = Vec::new();
     let total_len = Arc::new(hm.len());
+    let v = Arc::new(Mutex::new(Vec::new()));
 
 
     for chunk in chunks{
@@ -411,7 +410,7 @@ pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, result:  Bubbl
         let i2 = go.clone();
         let lo = total_len.clone();
 
-        let test2 = test.clone();
+        let v2 = v.clone();
         let te2 = te.clone();
 
         let handle = thread::spawn(move || {
@@ -423,9 +422,9 @@ pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, result:  Bubbl
                 let mut network = related_intervals::create_network_hashmap(&jo);
                 make_nested(&jo, & mut network);
 
-                let mut test3 = test2.lock().unwrap();
                 let ote = &(te2.get(k).unwrap().clone() as u32);
-                connect_bubbles(&network, & mut test3, ote);
+                let mut rr = v2.lock().unwrap();
+                rr.push((network, ote.clone()));
 
                 // let mut rrr = j.lock().unwrap();
                 // rrr.push((k.clone(), network));
@@ -447,8 +446,15 @@ pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, result:  Bubbl
     //     connect_bubbles(&v, result, &(p2i.get(k).unwrap().clone() as u32))
     // }
 
-    let u = Arc::try_unwrap(test).unwrap();
+
+    let u = Arc::try_unwrap(v).unwrap();
     let mut u = u.into_inner().unwrap();
+
+
+    for x in u{
+        connect_bubbles(&x.0, & mut result, &x.1);
+    }
+    let mut u = result.clone();
     u.bubbles.shrink_to_fit();
     u.anchor2bubble.shrink_to_fit();
     u.intervals.shrink_to_fit();
@@ -458,7 +464,7 @@ pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, result:  Bubbl
 }
 
 /// Conntect bubbles and add children and parents
-pub fn connect_bubbles(hm: &std::collections::HashMap<(u32, u32), Network>,  result: &mut MutexGuard<BubbleWrapper>, s: &u32){
+pub fn connect_bubbles(hm: &std::collections::HashMap<(u32, u32), Network>,  result: &mut BubbleWrapper, s: &u32){
     let id2id = &result.id2id.clone();
     let bubbles = &mut result.bubbles;
     let s2 = s.clone();
