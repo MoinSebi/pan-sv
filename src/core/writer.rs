@@ -22,7 +22,7 @@ pub fn bubble_naming_new(hm1: & Vec<Bubble>, out: &str){
            "minLen",
            "maxLen",
            "meanLen",
-           "#traversal",
+           "#traversals",
            "#intervals",
            "Parents",
             "Anchor1",
@@ -89,22 +89,23 @@ pub fn writing_bed(r: &BubbleWrapper, index2: & HashMap<String, Vec<usize>>, pat
 /// Writing bed file
 /// Accession - FROM - TO - BUBBLE ID - BUBBLE CORE - TRAVERSAL
 /// Iterate over id2interval bubble_wrapper
-pub fn writing_bed2(r: &BubbleWrapper, index2: & hashbrown::HashMap<String, Vec<usize>>, paths: &Vec<NPath>, out: &str) {
+pub fn writing_bed2(r: &mut BubbleWrapper, index2: & hashbrown::HashMap<String, Vec<usize>>, paths: &Vec<NPath>, out: &str) {
     let f = File::create([out, "bed"].join(".")).expect("Unable to create file");
     let mut f = BufWriter::new(f);
     let p = &r.intervals;
-    let p2 = &r.bubbles;
+    let mut p2 = & mut r.bubbles;
 
-    for bub in p2.iter() {
+    for bub in p2.iter_mut() {
         let (max, min, _mean) = bub.traversal_stats();
-        for x in bub.traversals.iter() {
-            for x1 in x.pos.iter() {
+        for x in bub.traversals.iter_mut(){
+            for x1 in x.pos.iter_mut() {
                 let pos = p.get(*x1 as usize).unwrap();
                 let from_id: usize = index2.get(&paths[pos.acc as usize].name).unwrap()[pos.from as usize];
                 let mut to_id: usize = index2.get(&paths[pos.acc as usize].name).unwrap()[pos.to as usize - 1];
                 if pos.to == pos.from + 1 {
                     to_id = from_id.clone();
                 }
+                x.length = (to_id - from_id) as u32;
 
                 write!(f, "{}\t{}\t{}\t{}\t{}\t{}\t\n",
                        paths[pos.acc as usize].name,

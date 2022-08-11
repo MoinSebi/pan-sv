@@ -128,7 +128,7 @@ fn main() {
     indel_detection(& mut o, &graph.paths, interval_numb);
 
 
-
+    writing_bed2(& mut o, &g2p, &graph.paths, outprefix);
 
     info!("Categorize bubbles");
     check_bubble_size(&mut o);
@@ -144,10 +144,6 @@ fn main() {
     //bubble_parent_structure(&bub_wrapper.bubbles, outprefix);
 
 
-
-
-    info!("Writing bed");
-    writing_bed2(&o, &g2p, &graph.paths, outprefix);
 
 
     //writing_bed_traversals(&bub_wrapper, &g2p, &graph.paths, outprefix);

@@ -250,6 +250,7 @@ pub fn bw_index(input: HashMap<(u32, u32, u32), Vec<Posindex>>) ->  (Vec<((u32, 
         }
         res1.push((x.0.clone(), o));
     }
+    res1.shrink_to_fit();
     bw.intervals.shrink_to_fit();
     bw.id2id.shrink_to_fit();
     (res1, bw)
@@ -259,7 +260,7 @@ pub fn bw_index(input: HashMap<(u32, u32, u32), Vec<Posindex>>) ->  (Vec<((u32, 
 
 
 pub fn merge_traversals(input: Vec<((u32, u32, u32), Vec<(Posindex, u32)>)>, paths: &   Vec<NPath>, path2index: &HashMap<String, usize>, bw: &mut BubbleWrapper, threads: &usize){
-
+    info!("MERGE");
     let chunks = chunk_inplace(input, threads.clone());
 
 
@@ -364,7 +365,7 @@ pub fn indel_detection(r: &mut BubbleWrapper, paths: &Vec<NPath>, last_id: u32){
                 //if ! bub.acc.contains(& path.name) {
 
 
-                let trav: Traversal = Traversal {pos: vec![], id: last_tra, length: 0};
+                let trav: Traversal = Traversal {pos: vec![ll], id: last_tra, length: 0};
                 r.intervals.push(Posindex { from: (x as u32), to: ((x + 1) as u32), acc: i as u32});
                 r.id2id.insert(((x as u32), ((x + 1) as u32), i as u32), bub.id.clone());
                 bub.traversals.push(trav);
@@ -392,6 +393,7 @@ pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, result:  Bubbl
     let mut go = Arc::new(Mutex::new(0));
 
     let test = Arc::new(Mutex::new(result));
+    let te = Arc::new(p2i.clone());
     let te = Arc::new(p2i.clone());
 
     let mut handles = Vec::new();
@@ -451,15 +453,18 @@ pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, result:  Bubbl
 
 /// Conntect bubbles and add children and parents
 pub fn connect_bubbles(hm: &std::collections::HashMap<(u32, u32), Network>,  result: &mut MutexGuard<BubbleWrapper>, s: &u32){
+    let id2id = &result.id2id.clone();
+    let bubbles = &mut result.bubbles;
+    let s2 = s.clone();
     for (k,v) in hm.iter(){
-        let bub_id = &result.id2id.get(&(k.0, k.1, s.clone())).unwrap().clone();
+        let bub_id = &id2id.get(&(k.0, k.1, s2)).unwrap().clone();
         let mut ii: Vec<u32> = Vec::new();
         for x in v.parent.iter(){
-            ii.push(result.id2id.get(&(x.0, x.1, s.clone())).unwrap().clone());
+            ii.push(id2id.get(&(x.0, x.1, s2)).unwrap().clone());
         }
         for x in ii.iter(){
-            result.bubbles.get_mut(*x as usize).unwrap().children.insert(bub_id.clone());
-            result.bubbles.get_mut(*bub_id as usize).unwrap().parents.insert(x.clone().clone());
+            bubbles.get_mut(*x as usize).unwrap().children.insert(bub_id.clone());
+            bubbles.get_mut(*bub_id as usize).unwrap().parents.insert(x.clone().clone());
         }
 
     }
