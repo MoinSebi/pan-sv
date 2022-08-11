@@ -75,8 +75,8 @@ impl Bubble {
         let u3: HashSet<u32> = HashSet::new();
         let mut rr = Vec::with_capacity(groups.len());
         let mut h = last;
-        for x in groups.iter(){
-            rr.push(Traversal{length: x[0], pos: x[1..].to_vec(), id: last});
+        for x in groups{
+            rr.push(Traversal{length: 0, pos: x, id: last});
             h += 1;
         }
 

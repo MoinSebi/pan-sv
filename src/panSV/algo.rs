@@ -159,50 +159,47 @@ pub fn sort_trav(result:  HashMap<String, Vec<PanSVpos>>) -> HashMap<String, Vec
 }
 
 
-pub fn create_bubbles_stupid(inp: & HashMap<String, Vec<PanSVpos>>, paths: &   Vec<NPath>, ghm: & HashMap<String, Vec<usize>>, path2index: &HashMap<String, usize>, threads: &usize) -> (HashMap<(u32, u32, u32), Vec<(usize, Posindex, u32)>>, BubbleWrapper) {
+pub fn create_bubbles_stupid(input: & HashMap<String, Vec<PanSVpos>>, paths: &   Vec<NPath>, path2index: &HashMap<String, usize>, threads: &usize) -> (HashMap<(u32, u32, u32), Vec<(Posindex, u32)>>, BubbleWrapper) {
     info!("Create bubbles");
     let chunks = chunk_inplace(paths.clone(), threads.clone());
 
-    let inp2 = Arc::new(inp.clone());
-    let ghm2 = Arc::new(ghm.clone());
-    let ii = Arc::new(Mutex::new(0));
-    let total_len = Arc::new(inp.len());
+    let arc_input = Arc::new(input.clone());
+    let arc_index = Arc::new(Mutex::new(0));
+    let arc_total_len = Arc::new(input.len());
 
-    let mut yo :HashMap<(u32, u32, u32), Vec<(usize, Posindex)>> = HashMap::new();
-    let arc_yo = Arc::new(Mutex::new(yo));
-    let p2i = Arc::new(path2index.clone());
+    let mut output:HashMap<(u32, u32, u32), Vec<(Posindex)>> = HashMap::new();
+    let arc_output = Arc::new(Mutex::new(output));
+    let arc_path2index = Arc::new(path2index.clone());
 
 
     let mut handles = Vec::new();
 
 
     for chunk in chunks {
-        let i2 = ii.clone();
-        let total_len2 = total_len.clone();
+        let carc_index = arc_index.clone();
+        let carc_total_len = arc_total_len.clone();
 
-        let inp3 = inp2.clone();
-        let ghm3 = ghm2.clone();
-        let p2i2 = p2i.clone();
-        let arc_yo2 = arc_yo.clone();
-
-
+        let carc_input = arc_input.clone();
+        let p2i2 = arc_path2index.clone();
+        let arc_yo2 = arc_output.clone();
 
         let handle = thread::spawn(move || {
 
-            for x in chunk {
+            for path in chunk {
                 let mut result = Vec::new();
-                for pos in inp3[&x.name].iter() {
-                    let newbub: (u32, u32) = (min(x.nodes[pos.start as usize], x.nodes[pos.end as usize]), max(x.nodes[pos.start as usize], x.nodes[pos.end as usize]));
-                    let len_trav: usize = ghm3.get(&x.name).unwrap()[pos.end as usize - 1] - ghm3.get(&x.name).unwrap()[pos.start as usize];
-                    let po1 = Posindex { from: pos.start.clone(), to: pos.end.clone(), acc: *p2i2.get(&x.name).unwrap() as u32 };
-                    result.push((newbub, len_trav, po1, pos.core));
+                for pos in carc_input[&path.name].iter() {
+                    let m1 = path.nodes[pos.start as usize];
+                    let m2 = path.nodes[pos.end as usize];
+                    let bub_ids: (u32, u32) = (min(m1, m2), max(m1, m2));
+                    let pindex = Posindex { from: pos.start.clone(), to: pos.end.clone(), acc: *p2i2.get(&path.name).unwrap() as u32 };
+                    result.push((bub_ids, pindex, pos.core));
                 }
                 result.shrink_to_fit();
                 let mut h = arc_yo2.lock().unwrap();
                 add_new_bubbles(result, &mut h);
-                let mut imut = i2.lock().unwrap();
+                let mut imut = carc_index.lock().unwrap();
                 *imut = *imut + 1;
-                info!("({}/{}) {}", imut, total_len2, x.name );
+                info!("({}/{}) {}", imut, carc_total_len, path.name );
             }
 
         });
@@ -214,7 +211,7 @@ pub fn create_bubbles_stupid(inp: & HashMap<String, Vec<PanSVpos>>, paths: &   V
     }
 
 
-    let u = Arc::try_unwrap(arc_yo).unwrap();
+    let u = Arc::try_unwrap(arc_output).unwrap();
     let mut u = u.into_inner().unwrap();
     let (u,p) = bw_index(u);
     (u, p)
@@ -222,17 +219,17 @@ pub fn create_bubbles_stupid(inp: & HashMap<String, Vec<PanSVpos>>, paths: &   V
 
 
 #[inline]
-pub fn add_new_bubbles(input: Vec<((u32, u32), usize, Posindex, u32)>, f: &mut MutexGuard<HashMap<(u32, u32, u32), Vec<(usize, Posindex)>>>){
+pub fn add_new_bubbles(input: Vec<((u32, u32), Posindex, u32)>, f: &mut MutexGuard<HashMap<(u32, u32, u32), Vec<Posindex>>>){
     debug!("Add new bubbles: Index");
     for (i,x) in input.iter().enumerate(){
-        f.entry((x.0.0, x.0.1, x.3)).and_modify(| e| {e.push((x.1,x.2.clone()))}).or_insert(vec![(x.1,x.2.clone())]);
+        f.entry((x.0.0, x.0.1, x.2)).and_modify(| e| {e.push((x.1.clone()))}).or_insert(vec![(x.1.clone())]);
     }
 }
 
 
 
 
-pub fn bw_index(input: HashMap<(u32, u32, u32), Vec<(usize, Posindex)>>) ->  (HashMap<(u32, u32, u32), Vec<(usize, Posindex, u32)>>, BubbleWrapper){
+pub fn bw_index(input: HashMap<(u32, u32, u32), Vec<Posindex>>) ->  (HashMap<(u32, u32, u32), Vec<(Posindex, u32)>>, BubbleWrapper){
     debug!("BW INDEX");
     let mut bw = BubbleWrapper::new();
     let mut res1 = HashMap::new();
@@ -241,9 +238,9 @@ pub fn bw_index(input: HashMap<(u32, u32, u32), Vec<(usize, Posindex)>>) ->  (Ha
     for (i,x) in input.iter().enumerate(){
         let mut o = Vec::new();
         for y in x.1.iter(){
-            bw.intervals.push(y.1.clone());
-            bw.id2id.insert((y.1.from.clone(), y.1.to.clone(), y.1.acc.clone()), i as u32);
-            o.push((y.0.clone(), y.1.clone(),count));
+            bw.intervals.push(y.clone());
+            bw.id2id.insert((y.from.clone(), y.to.clone(), y.acc.clone()), i as u32);
+            o.push((y.clone(),count));
             count += 1;
 
         }
@@ -254,11 +251,11 @@ pub fn bw_index(input: HashMap<(u32, u32, u32), Vec<(usize, Posindex)>>) ->  (Ha
     (res1, bw)
 }
 
-pub fn merge_traversals(input: HashMap<(u32, u32, u32), Vec<(usize, Posindex, u32)>>, paths: &   Vec<NPath>, path2index: &HashMap<String, usize>, bw: &mut BubbleWrapper){
+pub fn merge_traversals(input: HashMap<(u32, u32, u32), Vec<(Posindex, u32)>>, paths: &   Vec<NPath>, path2index: &HashMap<String, usize>, bw: &mut BubbleWrapper){
     info!("Merge traversals");
 
 
-    let f: Vec<((u32, u32, u32), Vec<(usize, Posindex, u32)>)> = input.into_iter().map(|(x,y)| (x,y)).collect();
+    let f: Vec<((u32, u32, u32), Vec<(Posindex, u32)>)> = input.into_iter().map(|(x,y)| (x,y)).collect();
     let chunks = chunk_inplace(f, 2);
     let mut res = Vec::new();
     let arc_res = Arc::new(Mutex::new(res));
@@ -276,36 +273,28 @@ pub fn merge_traversals(input: HashMap<(u32, u32, u32), Vec<(usize, Posindex, u3
             for y in x{
                 let mut ss:  Vec<Vec<(u32, bool)>> = Vec::new();
                 let mut go: Vec<Vec<u32>> = Vec::new();
-                let mut ll: Vec<usize> = Vec::new();
-                for (l, pos, k) in y.1{
+                for (pos, id) in y.1 {
                     // Man brauch nicht die bub_id sonden die posindex id
-                    let bub_id = arc_bw2.id2id.get((&(pos.from, pos.to, pos.acc))).unwrap();
-                    let idid = k;
+                    let idid = id;
 
                     let p = &arc_p2i2[pos.acc as usize];
-                    let k: Vec<u32> = p.nodes[(pos.from+1) as usize..pos.to as usize].iter().cloned().collect();
-                    let k2: Vec<bool> = p.dir[(pos.from+1) as usize..pos.to as usize].iter().cloned().collect();
+                    let k: Vec<u32> = p.nodes[(pos.from + 1) as usize..pos.to as usize].iter().cloned().collect();
+                    let k2: Vec<bool> = p.dir[(pos.from + 1) as usize..pos.to as usize].iter().cloned().collect();
                     let mut k10 = Vec::new();
-                    for x in 0..k.len(){
+                    for x in 0..k.len() {
                         k10.push((k[x], k2[x]));
                     }
 
-                    if ll.contains(&l){
-                        if ss.contains(&k10){
-                            let index = ss.iter().position(|r| *r == k10).unwrap();
-                            go[index].push(bub_id.clone())
-                        } else {
-                            go.push(vec![l as u32, idid.clone()]);
-                            ll.push(l);
-                            ss.push(k10);
-                        }
-                    } else {
-                        ll.push(l);
-                        ss.push(k10);
-                        go.push(vec![l as u32, idid.clone()])
-                    }
 
+                    if ss.contains(&k10) {
+                        let index = ss.iter().position(|r| *r == k10).unwrap();
+                        go[index].push(idid.clone())
+                    } else {
+                        go.push(vec![idid.clone()]);
+                        ss.push(k10);
+                    }
                 }
+
                 gg.push((y.0, go));
             }
                 let mut ff = arc_res2.lock().unwrap();

@@ -118,7 +118,7 @@ fn main() {
         counts.counting_graph(&graph);
     }
     bi_wrapper = algo_panSV_multi(&graph.paths, &counts, &threads);
-    let (mut tmp1, mut bub_wrapper) = create_bubbles_stupid(&bi_wrapper, &graph.paths, &g2p, &graph.path2id, &threads);
+    let (mut tmp1, mut bub_wrapper) = create_bubbles_stupid(&bi_wrapper, &graph.paths,  &graph.path2id, &threads);
     //info!("{:?}", bub_wrapper);
     merge_traversals(tmp1, &graph.paths, &graph.path2id, &mut bub_wrapper);
 
