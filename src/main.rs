@@ -124,7 +124,6 @@ fn main() {
 
     let mut o = connect_bubbles_multi(&bi_wrapper, bub_wrapper, &graph.path2id, &2);
     let interval_numb = o.intervals.len() as u32;
-    info!("print bw {:?}", o);
 
     //indel_detection(& mut bub_wrapper, &graph.paths, interval_numb);
 

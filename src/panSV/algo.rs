@@ -248,8 +248,6 @@ pub fn bw_index(input: &HashMap<(u32, u32, u32), Vec<(usize, Posindex)>>) ->  Bu
 
 pub fn merge_traversals(input: HashMap<(u32, u32, u32), Vec<(usize, Posindex)>>, paths: &   Vec<NPath>, path2index: &HashMap<String, usize>, bw: &mut BubbleWrapper){
     info!("Merge traversals");
-    println!("id2id {:?}" , bw.id2id);
-
     let mut df = HashMap::new();
     let mut cou: u32 = 0;
     for x in input.iter(){
@@ -324,7 +322,6 @@ pub fn merge_traversals(input: HashMap<(u32, u32, u32), Vec<(usize, Posindex)>>,
 
     let u = Arc::try_unwrap(arc_res).unwrap();
     let mut u = u.into_inner().unwrap();
-    println!("make {:?}", u);
     make_bubbles(bw, u);
 
 

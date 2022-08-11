@@ -76,8 +76,6 @@ impl Bubble {
         let mut rr = Vec::with_capacity(groups.len());
         let mut h = last;
         for x in groups.iter(){
-            println!("{:?}", x);
-            println!("{:?}", x[1..].to_vec());
             rr.push(Traversal{length: x[0], pos: x[1..].to_vec(), id: last});
             h += 1;
         }
