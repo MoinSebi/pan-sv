@@ -7,7 +7,7 @@ mod panSV;
 use hashbrown::HashMap;
 use std::env::args;
 use crate::core::counting::{CountNode};
-use crate::panSV::algo::{check_bubble_size, nest_version2, algo_panSV_multi, create_bubbles_stupid, bw_index, merge_traversals, connect_bubbles_multi};
+use crate::panSV::algo::{check_bubble_size, nest_version2, algo_panSV_multi, create_bubbles_stupid, bw_index, merge_traversals, connect_bubbles_multi, indel_detection};
 use crate::core::graph_helper::graph2pos;
 use clap::{Arg, App, AppSettings};
 use std::path::Path;
@@ -125,7 +125,7 @@ fn main() {
     let mut o = connect_bubbles_multi(&bi_wrapper, bub_wrapper, &graph.path2id, &threads);
     let interval_numb = o.intervals.len() as u32;
 
-    //indel_detection(& mut bub_wrapper, &graph.paths, interval_numb);
+    indel_detection(& mut o, &graph.paths, interval_numb);
 
 
 
