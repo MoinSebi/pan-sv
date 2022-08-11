@@ -239,7 +239,8 @@ pub fn bw_index(input: HashMap<(u32, u32, u32), Vec<Posindex>>) ->  (Vec<((u32, 
     let mut res1 = Vec::new();
 
     let mut count = 0;
-    for (i,x) in input.iter().enumerate(){
+    let mut i = 0 ;
+    for x in input{
         let mut o = Vec::new();
         for y in x.1.iter(){
             bw.intervals.push(y.clone());
@@ -248,6 +249,7 @@ pub fn bw_index(input: HashMap<(u32, u32, u32), Vec<Posindex>>) ->  (Vec<((u32, 
             count += 1;
 
         }
+        i += 1;
         res1.push((x.0.clone(), o));
     }
     res1.shrink_to_fit();
@@ -280,6 +282,7 @@ pub fn merge_traversals(input: Vec<((u32, u32, u32), Vec<(Posindex, u32)>)>, pat
         let arc_bw2 = arc_bw.clone();
 
         let handle = thread::spawn(move || {
+
             let mut gg = Vec::new();
             for bub2trav in chunk {
                 let mut ss:  Vec<Vec<(u32, bool)>> = Vec::new();
@@ -310,7 +313,7 @@ pub fn merge_traversals(input: Vec<((u32, u32, u32), Vec<(Posindex, u32)>)>, pat
             }
             gg.shrink_to_fit();
             let mut ff = arc_res2.lock().unwrap();
-            ff.extend(gg);
+            ff.push(gg);
             ff.shrink_to_fit();
 
         });
@@ -330,20 +333,23 @@ pub fn merge_traversals(input: Vec<((u32, u32, u32), Vec<(Posindex, u32)>)>, pat
 }
 
 
-pub fn make_bubbles(bw: &mut BubbleWrapper,  u: Vec<((u32, u32, u32), Vec<Vec<u32>>)>){
+pub fn make_bubbles(bw: &mut BubbleWrapper,  u: Vec<Vec<((u32, u32, u32), Vec<Vec<u32>>)>>) {
     info!("Make real bubbles");
     let mut tcount = 0;
     let mut i = 0;
-    for (bub, t) in u {
-        bw.anchor2bubble.insert((bub.0, bub.1), i as u32);
-        let ll = t.len();
-        bw.bubbles.push(Bubble::new2(bub.2, bub.0, bub.1, i, t, tcount));
-        tcount += ll as u32;
-        i += 1;
+    for x in u{
+        for (bub, t) in x {
+            bw.anchor2bubble.insert((bub.0, bub.1), i as u32);
+            let ll = t.len();
+            bw.bubbles.push(Bubble::new2(bub.2, bub.0, bub.1, i, t, tcount));
+            tcount += ll as u32;
+            i += 1;
+        }
     }
     bw.bubbles.shrink_to_fit();
     bw.anchor2bubble.shrink_to_fit();
 }
+
 
 /// Indel detection
 ///
