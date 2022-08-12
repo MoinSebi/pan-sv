@@ -11,7 +11,7 @@ use std::ops::Add;
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::thread;
 use bifurcation::helper::chunk_inplace;
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 use log::{debug, info};
 
 
@@ -397,22 +397,25 @@ pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, mut result:  B
     let chunks = chunk_inplace(g, threads.clone());
     //let rr = Arc::new(Mutex::new(Vec::new()));
     let mut go = Arc::new(Mutex::new(0));
+    let newred = Arc::new(Mutex::new(HashMap::new()));
 
     let te = Arc::new(p2i.clone());
 
     let mut handles = Vec::new();
     let total_len = Arc::new(hm.len());
-    let v = Arc::new(Mutex::new(Vec::new()));
+
+    let ree = Arc::new(result.id2id.clone());
 
 
     for chunk in chunks{
         //let j = rr.clone();
         let i2 = go.clone();
         let lo = total_len.clone();
+        let newred2 = newred.clone();
 
-        let v2 = v.clone();
         let te2 = te.clone();
 
+        let ree2 = ree.clone();
         let handle = thread::spawn(move || {
             for (i ,(k,v)) in chunk.iter().enumerate(){
                 let mut jo: Vec<(u32, u32)> = Vec::new();
@@ -423,8 +426,8 @@ pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, mut result:  B
                 make_nested(&jo, & mut network);
 
                 let ote = &(te2.get(k).unwrap().clone() as u32);
-                let mut rr = v2.lock().unwrap();
-                rr.push((network, ote.clone()));
+                let mut rr = newred2.lock().unwrap();
+                merge_bubbles(&network, & mut rr, &ree2, ote);
 
                 // let mut rrr = j.lock().unwrap();
                 // rrr.push((k.clone(), network));
@@ -441,19 +444,9 @@ pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, mut result:  B
         handle.join().unwrap()
 
     }
-    // info!("Connecting");
-    // for (k,v) in rr.lock().unwrap().iter(){
-    //     connect_bubbles(&v, result, &(p2i.get(k).unwrap().clone() as u32))
-    // }
-
-
-    let u = Arc::try_unwrap(v).unwrap();
+    let u = Arc::try_unwrap(newred).unwrap();
     let mut u = u.into_inner().unwrap();
-
-
-    for x in u{
-        connect_bubbles(&x.0, & mut result, &x.1);
-    }
+    in_bubbles(& mut u, &mut result.bubbles);
     let mut u = result.clone();
     u.bubbles.shrink_to_fit();
     u.anchor2bubble.shrink_to_fit();
@@ -478,9 +471,28 @@ pub fn connect_bubbles(hm: &std::collections::HashMap<(u32, u32), Network>,  res
             bubbles.get_mut(*x as usize).unwrap().children.insert(bub_id.clone());
             bubbles.get_mut(*bub_id as usize).unwrap().parents.insert(x.clone().clone());
         }
-
     }
+}
 
+pub fn merge_bubbles(hm: &std::collections::HashMap<(u32, u32), Network>, result: &mut MutexGuard<HashMap<u32,   HashSet<u32>>>, bw: &Arc<std::collections::HashMap<(u32, u32, u32), u32>>, s: &u32){
+
+    let s2 = s.clone();
+    for (k,v) in hm.iter() {
+        let bub_id = bw.get(&(k.0, k.1, s2)).unwrap().clone();
+        for x in v.parent.iter() {
+            let id = bw.get(&(x.0, x.1, s2)).unwrap().clone();
+            result.entry(bub_id).and_modify(|e| { e.insert(id); }).or_insert(HashSet::from([id]));
+        }
+    }
+}
+
+pub fn in_bubbles(result: &mut HashMap<u32, HashSet<u32>>, bw: &mut Vec<Bubble>){
+    for (bub_id, hs) in result.iter(){
+        for x in hs.iter() {
+            bw.get_mut(*x as usize).unwrap().children.insert(bub_id.clone());
+            bw.get_mut(*bub_id as usize).unwrap().parents.insert(x.clone().clone());
+        }
+    }
 }
 
 /// Checking bubble size
