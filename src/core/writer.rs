@@ -52,40 +52,6 @@ pub fn bubble_parent_structure(hm1: & Vec<Bubble>, out: &str){
 
 
 
-
-
-/// Writing bed file
-/// Accession - FROM - TO - BUBBLE ID - BUBBLE CORE - TRAVERSAL
-/// Iterate over id2interval bubble_wrapper
-pub fn writing_bed(r: &BubbleWrapper, index2: & HashMap<String, Vec<usize>>, paths: &Vec<NPath>, out: &str){
-
-    let f = File::create([out, "bed"].join(".")).expect("Unable to create file");
-    let mut f = BufWriter::new(f);
-
-    for v in r.intervals.iter() {
-        let from_id: usize = index2.get(&paths[v.acc as usize].name).unwrap()[v.from as usize];
-        let mut to_id:usize = index2.get(&paths[v.acc as usize].name).unwrap()[v.to as usize-1];
-
-        if v.to == v.from+1{
-            to_id = from_id.clone();
-        }
-        let bub = r.bubbles.get(*r.id2id.get(&(v.from, v.to, v.acc)).unwrap() as usize).unwrap();
-        let (max, min ,_mean) = bub.traversal_stats();
-
-        write!(f, "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
-               paths[v.clone().acc as usize].name,
-               from_id,
-               to_id,
-               bub.id,
-               bub.core,
-                bub.category,
-                bub.small ,
-                max,
-                min,).expect("Not able to write to file");
-    }
-}
-
-
 /// Writing bed file
 /// Accession - FROM - TO - BUBBLE ID - BUBBLE CORE - TRAVERSAL
 /// Iterate over id2interval bubble_wrapper

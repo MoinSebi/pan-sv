@@ -15,7 +15,7 @@ use std::process;
 use crate::panSV::panSV_core::{BubbleWrapper, PanSVpos};
 use gfaR_wrapper::{NGfa, GraphWrapper};
 use log::{debug, info, LevelFilter, warn};
-use crate::core::writer::{writing_bed, bubble_naming_new, bubble_parent_structure, writing_bed_traversals, writing_bed2};
+use crate::core::writer::{bubble_naming_new, bubble_parent_structure, writing_bed_traversals, writing_bed2};
 use std::io::Write;
 use crate::core::core::Posindex;
 use crate::core::logging::newbuilder;
