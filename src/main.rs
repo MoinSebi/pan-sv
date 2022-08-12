@@ -132,6 +132,7 @@ fn main() {
     info!("Write Traversal");
     writing_bed2(& mut bub_wrapper, &g2p, &graph.paths, outprefix);
 
+    graph = NGfa::new();
     info!("Categorize bubbles");
     check_bubble_size(&mut bub_wrapper);
 
