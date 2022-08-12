@@ -117,12 +117,13 @@ fn main() {
         info!("Counting nodes");
         counts.counting_graph(&graph);
     }
+    graph.nodes = HashMap::new();
     bi_wrapper = algo_panSV_multi(&graph.paths, &counts, &threads);
+    counts = CountNode::new();
     let (mut tmp1, mut bub_wrapper) = create_bubbles_stupid(&bi_wrapper, &graph.paths,  &graph.path2id, &threads);
     //info!("{:?}", bub_wrapper);
     merge_traversals(tmp1, &graph.paths, &graph.path2id, &mut bub_wrapper, &threads);
-
-    connect_bubbles_multi(&bi_wrapper, & mut bub_wrapper, &graph.path2id, &threads);
+    connect_bubbles_multi(bi_wrapper, & mut bub_wrapper, &graph.path2id, &threads);
     let interval_numb = bub_wrapper.intervals.len() as u32;
 
     indel_detection(& mut bub_wrapper, &graph.paths, interval_numb);

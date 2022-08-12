@@ -261,7 +261,7 @@ pub fn bw_index(input: HashMap<(u32, u32, u32), Vec<Posindex>>) ->  (Vec<((u32, 
 
 
 
-pub fn merge_traversals(input: Vec<((u32, u32, u32), Vec<(Posindex, u32)>)>, paths: &   Vec<NPath>, path2index: &HashMap<String, usize>, bw: &mut BubbleWrapper, threads: &usize){
+pub fn merge_traversals(input: Vec<((u32, u32, u32), Vec<(Posindex, u32)>)>, paths: & Vec<NPath>, path2index: &HashMap<String, usize>, bw: &mut BubbleWrapper, threads: &usize){
     info!("MERGE");
     let chunks = chunk_inplace(input, threads.clone());
 
@@ -386,14 +386,14 @@ pub fn indel_detection(r: &mut BubbleWrapper, paths: &Vec<NPath>, last_id: u32){
 /// Wrapper for connecting bubbles multithreaded
 ///
 ///
-pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, result:  &mut BubbleWrapper, p2i: &HashMap<String, usize>, threads: &usize){
+pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  &mut BubbleWrapper, p2i: &HashMap<String, usize>, threads: &usize){
     info!("Connect bubbles");
 
     let mut g = Vec::new();
-    for (k,v) in hm.iter(){
-        g.push((k.clone(),v.clone()));
+    for (k,v) in hm{
+        g.push((k,v));
     }
-
+    let total_len = Arc::new(g.len());
     let chunks = chunk_inplace(g, threads.clone());
     //let rr = Arc::new(Mutex::new(Vec::new()));
     let mut go = Arc::new(Mutex::new(0));
@@ -402,7 +402,6 @@ pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, result:  &mut 
     let te = Arc::new(p2i.clone());
 
     let mut handles = Vec::new();
-    let total_len = Arc::new(hm.len());
 
     let ree = Arc::new(result.id2id.clone());
 
