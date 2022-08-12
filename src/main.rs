@@ -122,25 +122,26 @@ fn main() {
     //info!("{:?}", bub_wrapper);
     merge_traversals(tmp1, &graph.paths, &graph.path2id, &mut bub_wrapper, &threads);
 
-    let mut o = connect_bubbles_multi(&bi_wrapper, bub_wrapper, &graph.path2id, &threads);
-    let interval_numb = o.intervals.len() as u32;
+    connect_bubbles_multi(&bi_wrapper, & mut bub_wrapper, &graph.path2id, &threads);
+    let interval_numb = bub_wrapper.intervals.len() as u32;
 
-    indel_detection(& mut o, &graph.paths, interval_numb);
+    indel_detection(& mut bub_wrapper, &graph.paths, interval_numb);
 
 
-    writing_bed2(& mut o, &g2p, &graph.paths, outprefix);
+    info!("Write Traversal");
+    writing_bed2(& mut bub_wrapper, &g2p, &graph.paths, outprefix);
 
     info!("Categorize bubbles");
-    check_bubble_size(&mut o);
+    check_bubble_size(&mut bub_wrapper);
 
     if matches.is_present("Nestedness"){
         info!("Nestedness");
-        nest_version2(& mut o);
+        nest_version2(& mut bub_wrapper);
     }
 
 
     info!("Writing bubble stats");
-    bubble_naming_new(&o.bubbles, outprefix);
+    bubble_naming_new(&bub_wrapper.bubbles, outprefix);
     //bubble_parent_structure(&bub_wrapper.bubbles, outprefix);
 
 

@@ -386,7 +386,7 @@ pub fn indel_detection(r: &mut BubbleWrapper, paths: &Vec<NPath>, last_id: u32){
 /// Wrapper for connecting bubbles multithreaded
 ///
 ///
-pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, mut result:  BubbleWrapper, p2i: &HashMap<String, usize>, threads: &usize) -> BubbleWrapper{
+pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, result:  &mut BubbleWrapper, p2i: &HashMap<String, usize>, threads: &usize){
     info!("Connect bubbles");
 
     let mut g = Vec::new();
@@ -446,13 +446,12 @@ pub fn connect_bubbles_multi(hm: &HashMap<String, Vec<PanSVpos>>, mut result:  B
     }
     let u = Arc::try_unwrap(newred).unwrap();
     let mut u = u.into_inner().unwrap();
-    in_bubbles(& mut u, &mut result.bubbles);
-    let mut u = result.clone();
-    u.bubbles.shrink_to_fit();
-    u.anchor2bubble.shrink_to_fit();
-    u.intervals.shrink_to_fit();
-    u.id2id.shrink_to_fit();
-    u
+    in_bubbles(u, &mut result.bubbles);
+
+    result.bubbles.shrink_to_fit();
+    result.anchor2bubble.shrink_to_fit();
+    result.intervals.shrink_to_fit();
+    result.id2id.shrink_to_fit();
 
 }
 
@@ -486,7 +485,7 @@ pub fn merge_bubbles(hm: &std::collections::HashMap<(u32, u32), Network>, result
     }
 }
 
-pub fn in_bubbles(result: &mut HashMap<u32, HashSet<u32>>, bw: &mut Vec<Bubble>){
+pub fn in_bubbles(result: HashMap<u32, HashSet<u32>>, bw: &mut Vec<Bubble>){
     for (bub_id, hs) in result.iter(){
         for x in hs.iter() {
             bw.get_mut(*x as usize).unwrap().children.insert(bub_id.clone());
