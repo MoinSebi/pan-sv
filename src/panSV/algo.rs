@@ -292,7 +292,7 @@ pub fn merge_traversals(input: Vec<((u32, u32, u32), Vec<(Posindex, u32)>)>, pat
         let handle = thread::spawn(move || {
 
             let mut gg = Vec::new();
-            for bub2trav in chunk {
+            for bub2trav in chunk.into_iter() {
                 let mut ss:  Vec<Vec<(u32, bool)>> = Vec::new();
                 let mut go: Vec<Vec<u32>> = Vec::new();
                 for (pos, id) in bub2trav.1 {
@@ -395,13 +395,10 @@ pub fn indel_detection(r: &mut BubbleWrapper, paths: &Vec<NPath>, last_id: u32){
 /// Wrapper for connecting bubbles multithreaded
 ///
 ///
-pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  & mut BubbleWrapper, p2i: &HashMap<String, usize>, threads: &usize){
+pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  BubbleWrapper, p2i: &HashMap<String, usize>, threads: &usize) -> BubbleWrapper{
     info!("Connect bubbles");
 
-    let mut g = Vec::new();
-    for (k,v) in hm{
-        g.push((k,v));
-    }
+    let mut g: Vec<(String, Vec<PanSVpos>)> = hm.into_iter().map(|s| s).collect();
     g.shrink_to_fit();
 
     // For Counting
@@ -409,16 +406,14 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  & mut 
     let mut genome_count = Arc::new(Mutex::new(0));
 
     let chunks = chunk_inplace(g, threads.clone());
-    let newred = Arc::new(Mutex::new(HashMap::new()));
+    let arc_result = Arc::new(Mutex::new(HashMap::new()));
 
-    let te = Arc::new(p2i.clone());
+    let arc_p2i = Arc::new(p2i.clone());
 
     let mut handles = Vec::new();
 
 
-    let id2id_tmp = result.id2id.clone();
-    result.id2id = std::collections::HashMap::new();
-    let ree = Arc::new(id2id_tmp);
+    let arc_id2id = Arc::new(result.id2id);
 
 
 
@@ -427,31 +422,28 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  & mut 
     for chunk in chunks{
         //let j = rr.clone();
         let carc_genome_count = genome_count.clone();
-        let lo = total_len.clone();
-        let newred2 = newred.clone();
+        let carc_total_len = total_len.clone();
+        let card_result = arc_result.clone();
 
-        let te2 = te.clone();
+        let carc_p2i = arc_p2i.clone();
+        let card_id2id = arc_id2id.clone();
 
-        let ree2 = ree.clone();
         let handle = thread::spawn(move || {
-            for (i ,(k,v)) in chunk.iter().enumerate(){
-                let mut jo: Vec<(u32, u32)> = Vec::new();
-                for x in v.iter() {
-                    jo.push((x.start.clone(), x.end.clone()));
-                }
-                let mut network = related_intervals::create_network_hashmap(&jo);
-                make_nested(&jo, & mut network);
+            for (i ,(k,v)) in chunk.into_iter().enumerate(){
+                let start_end = v.into_iter().map(|s| (s.start, s.end)).collect();
+                let mut network = related_intervals::create_network_hashmap(&start_end);
 
-                let ote = &(te2.get(k).unwrap().clone() as u32);
-                let mut rr = newred2.lock().unwrap();
-                merge_bubbles(&network, & mut rr, &ree2, ote);
+                make_nested(&start_end, & mut network);
 
-                // let mut rrr = j.lock().unwrap();
-                // rrr.push((k.clone(), network));
+                let ote = &(carc_p2i.get(&k).unwrap().clone() as u32);
+                let mut rr = card_result.lock().unwrap();
+                merge_bubbles(&network, & mut rr, &card_id2id, ote);
 
+
+                // Writing
                 let mut imut = carc_genome_count.lock().unwrap();
                 *imut = *imut + 1;
-                debug!("({}/{}) {}", imut, lo, k);
+                debug!("({}/{}) {}", imut, carc_total_len, k);
 
             }
         });
@@ -459,17 +451,26 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  & mut 
     }
     for handle in handles {
         handle.join().unwrap()
-
     }
-    let u = Arc::try_unwrap(newred).unwrap();
+
+
+    let u = Arc::try_unwrap(arc_result).unwrap();
     let mut u = u.into_inner().unwrap();
+
+    let mut r2 = BubbleWrapper::new();
+    r2.bubbles = result.bubbles;
+    r2.anchor2bubble = result.anchor2bubble;
+    r2.intervals = result.intervals;
     info!("Merge in bubble space");
-    in_bubbles(u, &mut result.bubbles);
-    result.id2id = Arc::try_unwrap(ree).unwrap();
-    result.bubbles.shrink_to_fit();
-    result.anchor2bubble.shrink_to_fit();
-    result.intervals.shrink_to_fit();
-    result.id2id.shrink_to_fit();
+    in_bubbles(u, &mut r2.bubbles);
+
+    // get it back
+    r2.id2id = Arc::try_unwrap(arc_id2id).unwrap();
+    r2.bubbles.shrink_to_fit();
+    r2.anchor2bubble.shrink_to_fit();
+    r2.intervals.shrink_to_fit();
+    r2.id2id.shrink_to_fit();
+    r2
 
 }
 
