@@ -11,10 +11,10 @@ use crate::core::graph_helper::graph2pos;
 use clap::{Arg, App, AppSettings};
 use std::path::Path;
 use std::process;
-use crate::panSV::panSV_core::{BubbleWrapper, PanSVpos};
+use crate::panSV::panSV_core::{PanSVpos};
 use gfaR_wrapper::{NGfa, GraphWrapper};
 use log::{ info, warn};
-use crate::core::writer::{bubble_naming_new, writing_bed2};
+use crate::core::writer::{bubble_naming_new, writing_bed_solot};
 use crate::core::logging::newbuilder;
 
 
@@ -115,9 +115,9 @@ fn main() {
     }
     graph.nodes = HashMap::new();
     bi_wrapper = algo_panSV_multi(&graph.paths, counts, &threads);
-    let (mut tmp1, mut bub_wrapper) = create_bubbles_stupid(&bi_wrapper, &graph.paths,  &graph.path2id, &threads);
+    let (tmp1, mut bub_wrapper) = create_bubbles_stupid(&bi_wrapper, &graph.paths,  &graph.path2id, &threads);
     //info!("{:?}", bub_wrapper);
-    merge_traversals(tmp1, &graph.paths, &graph.path2id, &mut bub_wrapper, &threads);
+    merge_traversals(tmp1, &graph.paths, &mut bub_wrapper, &threads);
     bub_wrapper = connect_bubbles_multi(bi_wrapper, bub_wrapper, &graph.path2id, &threads);
     let interval_numb = bub_wrapper.intervals.len() as u32;
 
@@ -125,9 +125,9 @@ fn main() {
 
 
     info!("Write Traversal");
-    writing_bed2(& mut bub_wrapper, &g2p, &graph.paths, outprefix);
+    writing_bed_solot(& mut bub_wrapper, &g2p, &graph.paths, outprefix);
 
-    drop(graph); 
+    drop(graph);
     info!("Categorize bubbles");
     check_bubble_size(&mut bub_wrapper);
 

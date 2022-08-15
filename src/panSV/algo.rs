@@ -14,7 +14,6 @@ use log::{debug, info};
 pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: CountNode, threads: &usize) -> HashMap<String, Vec<PanSVpos>>{
     info!("Running pan-sv algorithm");
 
-    let result: HashMap<_, _> = paths.iter().map(|x| (x.name.clone(), Vec::<PanSVpos>::with_capacity(counts.ncount.len()))).collect();
 
 
 
@@ -128,11 +127,8 @@ pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: CountNode, threads: &usize) 
 
     }
 
-    let u = Arc::try_unwrap(arc_results).unwrap();
-    let mut u = u.into_inner().unwrap();
 
-
-    let result_result = sort_trav(u);
+    let result_result = sort_trav(Arc::try_unwrap(arc_results).unwrap().into_inner().unwrap());
     result_result
 }
 
@@ -170,8 +166,7 @@ pub fn create_bubbles_stupid(input: & HashMap<String, Vec<PanSVpos>>, paths: &  
     let arc_index = Arc::new(Mutex::new(0));
     let arc_total_len = Arc::new(input.len());
 
-    let mut output:HashMap<(u32, u32, u32), Vec<Posindex>> = HashMap::new();
-    let arc_output = Arc::new(Mutex::new(output));
+    let arc_output = Arc::new(Mutex::new(HashMap::new()));
     let arc_path2index = Arc::new(path2index.clone());
 
 
@@ -218,9 +213,7 @@ pub fn create_bubbles_stupid(input: & HashMap<String, Vec<PanSVpos>>, paths: &  
     }
 
 
-    let u = Arc::try_unwrap(arc_output).unwrap();
-    let mut u = u.into_inner().unwrap();
-    let (u,p) = bw_index(u);
+    let (u,p) = bw_index( Arc::try_unwrap(arc_output).unwrap().into_inner().unwrap());
     (u, p)
 }
 
@@ -229,7 +222,7 @@ pub fn create_bubbles_stupid(input: & HashMap<String, Vec<PanSVpos>>, paths: &  
 /// Add
 pub fn add_new_bubbles(input: Vec<((u32, u32), Posindex, u32)>, f: &mut MutexGuard<HashMap<(u32, u32, u32), Vec<Posindex>>>){
     debug!("Add new bubbles: Index");
-    for (i,x) in input.into_iter().enumerate(){
+    for x in input.into_iter(){
         f.entry((x.0.0, x.0.1, x.2)).and_modify(| e| {e.push(x.1.clone())}).or_insert(vec![(x.1.clone())]);
     }
 }
@@ -243,7 +236,6 @@ pub fn bw_index(input: HashMap<(u32, u32, u32), Vec<Posindex>>) ->  (Vec<((u32, 
     let mut res1 = Vec::new();
 
     let mut count = 0;
-    let mut i = 0 ;
     for (index1, x) in input.into_iter().enumerate(){
         let mut o = Vec::new();
         for y in x.1.into_iter(){
@@ -267,7 +259,7 @@ pub fn bw_index(input: HashMap<(u32, u32, u32), Vec<Posindex>>) ->  (Vec<((u32, 
 
 
 
-pub fn merge_traversals(input: Vec<((u32, u32, u32), Vec<(Posindex, u32)>)>, paths: & Vec<NPath>, path2index: &HashMap<String, usize>, bw: &mut BubbleWrapper, threads: &usize){
+pub fn merge_traversals(input: Vec<((u32, u32, u32), Vec<(Posindex, u32)>)>, paths: & Vec<NPath>, bw: &mut BubbleWrapper, threads: &usize){
     info!("Merge intervals");
     let chunks = chunk_inplace(input, threads.clone());
 
@@ -343,7 +335,7 @@ pub fn make_bubbles(bw: &mut BubbleWrapper,  u: Vec<Vec<((u32, u32, u32), Vec<Ve
         for (bub, t) in x.into_iter() {
             bw.anchor2bubble.insert((bub.0, bub.1), i as u32);
             let ll = t.len();
-            bw.bubbles.push(Bubble::new2(bub.2, bub.0, bub.1, i, t, tcount));
+            bw.bubbles.push(Bubble::new(bub.2, bub.0, bub.1, i, t, tcount));
             tcount += ll as u32;
             i += 1;
         }
@@ -367,7 +359,7 @@ pub fn indel_detection(r: &mut BubbleWrapper, paths: &Vec<NPath>, last_id: u32){
         for x in 0..path.nodes.len()-1{
             let m1 = path.nodes[x];
             let m2 = path.nodes[x+1];
-            let mut ind: (u32, u32) = (min(m1, m2 ), max(m1, m2));
+            let ind: (u32, u32) = (min(m1, m2 ), max(m1, m2));
             if r.anchor2bubble.contains_key(&ind){
 
                 let bub =  r.bubbles.get_mut(*r.anchor2bubble.get(&ind).unwrap() as usize).unwrap();
@@ -397,7 +389,7 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  Bubble
 
     // For Counting
     let total_len = Arc::new(g.len());
-    let mut genome_count = Arc::new(Mutex::new(0));
+    let genome_count = Arc::new(Mutex::new(0));
 
     let chunks = chunk_inplace(g, threads.clone());
     let arc_result = Arc::new(Mutex::new(HashMap::new()));
@@ -423,7 +415,7 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  Bubble
         let card_id2id = arc_id2id.clone();
 
         let handle = thread::spawn(move || {
-            for (i ,(k,v)) in chunk.into_iter().enumerate(){
+            for (k,v) in chunk.into_iter(){
                 let start_end = v.into_iter().map(|s| (s.start, s.end)).collect();
                 let mut network = related_intervals::create_network_hashmap(&start_end);
 
@@ -447,16 +439,13 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  Bubble
         handle.join().unwrap()
     }
 
-
-    let u = Arc::try_unwrap(arc_result).unwrap();
-    let mut u = u.into_inner().unwrap();
-
+    info!("Merge in bubble space");
     let mut r2 = BubbleWrapper::new();
     r2.bubbles = result.bubbles;
+    in_bubbles(Arc::try_unwrap(arc_result).unwrap().into_inner().unwrap(), &mut r2.bubbles);
+
     r2.anchor2bubble = result.anchor2bubble;
     r2.intervals = result.intervals;
-    info!("Merge in bubble space");
-    in_bubbles(u, &mut r2.bubbles);
 
     // get it back
     r2.id2id = Arc::try_unwrap(arc_id2id).unwrap();

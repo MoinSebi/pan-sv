@@ -1,5 +1,4 @@
 use crate::core::core::Bubble;
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Write, BufWriter};
 use gfaR_wrapper::NPath;
@@ -34,6 +33,7 @@ pub fn bubble_naming_new(hm1: & Vec<Bubble>, out: &str){
 }
 
 
+#[allow(dead_code)]
 /// Naming bubble parent-child relationship
 ///
 /// Additional file nedded for new bubble naming
@@ -50,11 +50,11 @@ pub fn bubble_parent_structure(hm1: & Vec<Bubble>, out: &str){
 /// Writing bed file
 /// Accession - FROM - TO - BUBBLE ID - BUBBLE CORE - TRAVERSAL
 /// Iterate over id2interval bubble_wrapper
-pub fn writing_bed2(r: &mut BubbleWrapper, index2: & hashbrown::HashMap<String, Vec<usize>>, paths: &Vec<NPath>, out: &str) {
+pub fn writing_bed_solot(r: &mut BubbleWrapper, index2: & hashbrown::HashMap<String, Vec<usize>>, paths: &Vec<NPath>, out: &str) {
     let f = File::create([out, "bed"].join(".")).expect("Unable to create file");
     let mut f = BufWriter::new(f);
     let p = &r.intervals;
-    let mut p2 = & mut r.bubbles;
+    let p2 = & mut r.bubbles;
 
     for bub in p2.iter_mut() {
         for x in bub.traversals.iter_mut(){

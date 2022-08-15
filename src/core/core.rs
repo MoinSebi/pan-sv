@@ -44,32 +44,9 @@ pub struct Bubble {
 
 
 impl Bubble {
-    /// Bubble constructor
-    pub fn new(core: u32, start: u32, end: u32, first:u32, i: u32, trav: Traversal, s : Vec<(u32, bool)>) -> Self{
-        let mut u: Vec<u32> = Vec::new();
-        u.push(first);
-        let u2: HashSet<u32> = HashSet::new();
-        let u3: HashSet<u32> = HashSet::new();
-        let mut u4: HashMap<Vec<(u32, bool) >, Traversal> = HashMap::new();
-        u4.insert(s, trav);
 
-        Self {
-            start: start,
-            end: end,
-            children: u2,
-            parents: u3,
-            id: i,
-            traversals: Vec::new(),
-            core: core,
-            small: true,
-            ratio: 0.0,
-            category: 0,
-            nestedness: 0
 
-        }
-    }
-
-    pub fn new2(core: u32, start: u32, end: u32, i: u32, groups: Vec<Vec<u32>>, last: u32) -> Self{
+    pub fn new(core: u32, start: u32, end: u32, i: u32, groups: Vec<Vec<u32>>, last: u32) -> Self{
 
         let u2: HashSet<u32> = HashSet::new();
         let u3: HashSet<u32> = HashSet::new();
@@ -153,29 +130,6 @@ pub struct Traversal {
     pub length: u32, // Sequence length
     pub pos: Vec<u32>,
     pub id: u32,
-}
-
-impl  Traversal{
-    pub fn add_pos(&mut self, pos: u32){
-        self.pos.push(pos);
-    }
-
-
-
-    pub fn new(posid: u32, lens: u32) -> Self{
-        let mut k: Vec<u32> = Vec::new();
-        k.push(posid);
-        Self{
-            length: lens,
-            pos: k,
-            id: 0
-        }
-    }
-
-    #[allow(dead_code)]
-    pub fn get_pos(& self) -> usize{
-        self.pos.len()
-    }
 }
 
 
