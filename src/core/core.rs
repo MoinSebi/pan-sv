@@ -78,7 +78,9 @@ impl Bubble {
         for x in groups{
             rr.push(Traversal{length: 0, pos: x, id: h});
             h += 1;
+
         }
+        rr.shrink_to_fit();
 
         Self {
             start: start,
