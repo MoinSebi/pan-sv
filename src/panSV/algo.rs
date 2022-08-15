@@ -11,38 +11,45 @@ use std::ops::Add;
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::thread;
 use bifurcation::helper::chunk_inplace;
+use env_logger::Logger;
 use hashbrown::{HashMap, HashSet};
-use log::{debug, info};
+use log::{debug, info, Log};
+
+/// Multithreading bubble detection in panSV
+pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: CountNode, threads: &usize) -> HashMap<String, Vec<PanSVpos>>{
+    info!("Running pan-sv algorithm");
+
+    let mut result: HashMap<String, Vec<PanSVpos>> = HashMap::new();
+    let result: HashMap<_, _> = paths.iter().map(|x| (x.name.clone(), Vec::<PanSVpos>::with_capacity(counts.ncount.len()))).collect();
 
 
-pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: &CountNode, threads: &usize) -> HashMap<String, Vec<PanSVpos>>{
 
-    let mut result_panSV2: HashMap<String, Vec<PanSVpos>> = HashMap::new();
-    let mut max_index: HashMap<String, usize> = HashMap::new();
-    let mut index = 0;
-    // We create String -> (start, stop, core)
-    for x in paths.iter(){
-        let ki: Vec<_> = Vec::new();
-        result_panSV2.insert(x.name.to_owned().clone(), ki);
-    }
-    let mut ko = HashMap::new();
     let chunks = chunk_inplace(paths.clone(), threads.clone());
-    let rr = Arc::new(Mutex::new(ko));
-    let op1 = Arc::new(counts.clone());
-    let ll = paths.len();
-    let total_len = Arc::new(ll);
-    let ii = Arc::new(Mutex::new(index));
+    let arc_results = Arc::new(Mutex::new(HashMap::new()));
+    let arc_counts = Arc::new(counts);
+
+
+    // Indexing
+    let total_len = Arc::new(paths.len());
+    let genome_count = Arc::new(Mutex::new(0));
+
+    // Handles
     let mut handles = Vec::new();
+
+
+
+
+    // Iterate over packs of paths
     for chunk in chunks{
-        let j = rr.clone();
-        let op = op1.clone();
-        let i2 = ii.clone();
-        let lo = total_len.clone();
+        let carc_results = arc_results.clone();
+        let carc_counts = arc_counts.clone();
+
+        let carc_genome_count = genome_count.clone();
+        let carc_total_len = total_len.clone();
+
         let handle = thread::spawn(move || {
 
             let mut lastcore: u32;
-            let p = 10;
-
             let mut result_panSV: HashMap<String, Vec<PanSVpos>> = HashMap::new();
             for x in chunk.iter(){
                 let ki: Vec<_> = Vec::new();
@@ -55,18 +62,17 @@ pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: &CountNode, threads: &usize)
                 // All "open" intervals
                 let mut interval_open:  Vec<TmpPos> = Vec::new();
 
-                io::stderr().flush().unwrap();
                 // Iterate over all nodes
                 for (index, node) in x.nodes.iter().enumerate() {
 
                     // if core is smaller than before -> open new bubble
-                    if op.ncount[node] < lastcore {
+                    if carc_counts.ncount[node] < lastcore {
                         interval_open.push(TmpPos { acc: x.name.clone(), start: (index - 1) as u32, core: lastcore});
 
                     }
                     // If bigger -> close bubble
-                    else if (op.ncount[node] > lastcore) & (interval_open.len() > 0) {
-                        lastcore = op.ncount[node];
+                    else if (carc_counts.ncount[node] > lastcore) & (interval_open.len() > 0) {
+                        lastcore = carc_counts.ncount[node];
 
                         // There is no bubble opened with this core level
                         let mut trig = false;
@@ -78,13 +84,13 @@ pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: &CountNode, threads: &usize)
                         // We iterate over all open bubbles
                         for (index_open, o_trans) in interval_open.iter().enumerate() {
                             // Check if we find the same core level
-                            if (o_trans.core == op.ncount[node]) | (interval_open[interval_open.len() - 1].core < op.ncount[node]){
+                            if (o_trans.core == carc_counts.ncount[node]) | (interval_open[interval_open.len() - 1].core < carc_counts.ncount[node]){
                                 trig = true;
                             }
 
 
                             // If one open_interval has smaller (or same) core level -> close
-                            if o_trans.core <= op.ncount[node] {
+                            if o_trans.core <= carc_counts.ncount[node] {
                                 // why this?
                                 if index != 0 {
                                     result_panSV.get_mut(&o_trans.acc).unwrap().push(PanSVpos {start: o_trans.start, end: index as u32, core: o_trans.core});
@@ -105,18 +111,19 @@ pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: &CountNode, threads: &usize)
                         }
 
                     }
-                    lastcore = op.ncount[node];
+                    lastcore = carc_counts.ncount[node];
 
                 }
-                let mut imut = i2.lock().unwrap();
+                let mut imut = carc_genome_count.lock().unwrap();
                 *imut = *imut + 1;
-                info!("({}/{}) {}", imut, lo, x.name );
+                debug!("({}/{}) {}", imut, carc_total_len, x.name );
+                result_panSV.get_mut(&x.name).unwrap().shrink_to_fit();
             }
 
 
-            let mut u = j.lock().unwrap();
-            for (key, value) in result_panSV.iter() {
-                u.insert(key.clone(), value.clone());
+            let mut u = carc_results.lock().unwrap();
+            for (key, value) in result_panSV {
+                u.insert(key, value);
             };
 
         });
@@ -126,13 +133,12 @@ pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: &CountNode, threads: &usize)
         handle.join().unwrap()
 
     }
-    let mut result = HashMap::new();
-    for x in rr.lock().unwrap().iter(){
-        result.insert(x.0.clone(), x.1.clone());
-    }
+
+    let u = Arc::try_unwrap(arc_results).unwrap();
+    let mut u = u.into_inner().unwrap();
 
 
-    let result_result = sort_trav(result);
+    let result_result = sort_trav(u);
     result_result
 }
 
@@ -140,6 +146,7 @@ pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: &CountNode, threads: &usize)
 ///
 /// smallest a into biggest b
 pub fn sort_trav(result:  HashMap<String, Vec<PanSVpos>>) -> HashMap<String, Vec<PanSVpos>>{
+    info!("Sorting detected bubbles");
 
     let mut new_result: HashMap<String, Vec<PanSVpos>> = HashMap::new();
 
@@ -158,7 +165,7 @@ pub fn sort_trav(result:  HashMap<String, Vec<PanSVpos>>) -> HashMap<String, Vec
     new_result
 }
 
-
+/// This function creates bubbles
 pub fn create_bubbles_stupid(input: & HashMap<String, Vec<PanSVpos>>, paths: &   Vec<NPath>, path2index: &HashMap<String, usize>, threads: &usize) -> (Vec<((u32, u32, u32), Vec<(Posindex, u32)>)>, BubbleWrapper) {
     info!("Create bubbles");
     let chunks = chunk_inplace(paths.clone(), threads.clone());
