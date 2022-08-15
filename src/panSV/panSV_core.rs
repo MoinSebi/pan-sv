@@ -1,5 +1,5 @@
-use std::collections::{HashMap, BTreeSet};
 use crate::core::core::{Bubble, Posindex};
+use hashbrown::HashMap;
 
 
 #[derive(Debug, Clone)]

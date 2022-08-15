@@ -1,25 +1,19 @@
 use std::cmp::{max, min};
-use std::collections::{BTreeSet};
 use crate::core::counting::{CountNode};
 use crate::panSV::panSV_core::{PanSVpos, TmpPos, BubbleWrapper};
 use crate::core::core::{Posindex, Bubble, Traversal};
 use related_intervals::{make_nested, Network};
 use gfaR_wrapper::NPath;
-use std::io::{self, Write};
-use std::iter::FromIterator;
-use std::ops::Add;
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::thread;
 use bifurcation::helper::chunk_inplace;
-use env_logger::Logger;
 use hashbrown::{HashMap, HashSet};
-use log::{debug, info, Log};
+use log::{debug, info};
 
 /// Multithreading bubble detection in panSV
 pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: CountNode, threads: &usize) -> HashMap<String, Vec<PanSVpos>>{
     info!("Running pan-sv algorithm");
 
-    let mut result: HashMap<String, Vec<PanSVpos>> = HashMap::new();
     let result: HashMap<_, _> = paths.iter().map(|x| (x.name.clone(), Vec::<PanSVpos>::with_capacity(counts.ncount.len()))).collect();
 
 
@@ -176,7 +170,7 @@ pub fn create_bubbles_stupid(input: & HashMap<String, Vec<PanSVpos>>, paths: &  
     let arc_index = Arc::new(Mutex::new(0));
     let arc_total_len = Arc::new(input.len());
 
-    let mut output:HashMap<(u32, u32, u32), Vec<(Posindex)>> = HashMap::new();
+    let mut output:HashMap<(u32, u32, u32), Vec<Posindex>> = HashMap::new();
     let arc_output = Arc::new(Mutex::new(output));
     let arc_path2index = Arc::new(path2index.clone());
 
@@ -236,7 +230,7 @@ pub fn create_bubbles_stupid(input: & HashMap<String, Vec<PanSVpos>>, paths: &  
 pub fn add_new_bubbles(input: Vec<((u32, u32), Posindex, u32)>, f: &mut MutexGuard<HashMap<(u32, u32, u32), Vec<Posindex>>>){
     debug!("Add new bubbles: Index");
     for (i,x) in input.into_iter().enumerate(){
-        f.entry((x.0.0, x.0.1, x.2)).and_modify(| e| {e.push((x.1.clone()))}).or_insert(vec![(x.1.clone())]);
+        f.entry((x.0.0, x.0.1, x.2)).and_modify(| e| {e.push(x.1.clone())}).or_insert(vec![(x.1.clone())]);
     }
 }
 
@@ -437,7 +431,7 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  Bubble
 
                 let ote = &(carc_p2i.get(&k).unwrap().clone() as u32);
                 let mut rr = card_result.lock().unwrap();
-                merge_bubbles(&network, & mut rr, &card_id2id, ote);
+                merge_bubbles(network, & mut rr, &card_id2id, ote);
 
 
                 // Writing
@@ -474,32 +468,15 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  Bubble
 
 }
 
-/// Conntect bubbles and add children and parents
-pub fn connect_bubbles(hm: &std::collections::HashMap<(u32, u32), Network>,  result: &mut BubbleWrapper, s: &u32){
-    let id2id = &result.id2id.clone();
-    let bubbles = &mut result.bubbles;
-    let s2 = s.clone();
-    for (k,v) in hm.iter(){
-        let bub_id = &id2id.get(&(k.0, k.1, s2)).unwrap().clone();
-        let mut ii: Vec<u32> = Vec::new();
-        for x in v.parent.iter(){
-            ii.push(id2id.get(&(x.0, x.1, s2)).unwrap().clone());
-        }
-        for x in ii.iter(){
-            bubbles.get_mut(*x as usize).unwrap().children.insert(bub_id.clone());
-            bubbles.get_mut(*bub_id as usize).unwrap().parents.insert(x.clone().clone());
-        }
-    }
-}
 
-pub fn merge_bubbles(hm: &std::collections::HashMap<(u32, u32), Network>, result: &mut MutexGuard<HashMap<u32,   HashSet<u32>>>, bw: &Arc<std::collections::HashMap<(u32, u32, u32), u32>>, s: &u32){
+pub fn merge_bubbles(hm: HashMap<(u32, u32), Network>, result: &mut MutexGuard<HashMap<u32,   HashSet<u32>>>, bw: &Arc<HashMap<(u32, u32, u32), u32>>, s: &u32){
 
     let s2 = s.clone();
-    for (k,v) in hm.iter() {
-        let bub_id = bw.get(&(k.0, k.1, s2)).unwrap().clone();
-        for x in v.parent.iter() {
+    for (k,v) in hm.into_iter() {
+        let bub_id = bw.get(&(k.0, k.1, s2)).unwrap();
+        for x in v.parent.into_iter() {
             let id = bw.get(&(x.0, x.1, s2)).unwrap().clone();
-            result.entry(bub_id).and_modify(|e| { e.insert(id); }).or_insert(HashSet::from([id]));
+            result.entry(*bub_id).and_modify(|e| { e.insert(id); }).or_insert(HashSet::from([id]));
         }
     }
 }

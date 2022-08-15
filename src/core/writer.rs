@@ -2,12 +2,9 @@ use crate::core::core::Bubble;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Write, BufWriter};
-use std::sync::{Arc, Mutex};
-use std::thread;
 use gfaR_wrapper::NPath;
-use bifurcation::helper::chunk_inplace;
 use crate::panSV::panSV_core::{BubbleWrapper};
-use crate::core::helper::{bool2string_dir, hashset2string};
+use crate::core::helper::{hashset2string};
 
 /// Write bubbles with unique id
 /// Read doc/bubble.stats
@@ -50,8 +47,6 @@ pub fn bubble_parent_structure(hm1: & Vec<Bubble>, out: &str){
 }
 
 
-
-
 /// Writing bed file
 /// Accession - FROM - TO - BUBBLE ID - BUBBLE CORE - TRAVERSAL
 /// Iterate over id2interval bubble_wrapper
@@ -62,7 +57,6 @@ pub fn writing_bed2(r: &mut BubbleWrapper, index2: & hashbrown::HashMap<String, 
     let mut p2 = & mut r.bubbles;
 
     for bub in p2.iter_mut() {
-        let (max, min, _mean) = bub.traversal_stats();
         for x in bub.traversals.iter_mut(){
             for x1 in x.pos.iter_mut() {
                 let pos = p.get(*x1 as usize).unwrap();
@@ -84,33 +78,6 @@ pub fn writing_bed2(r: &mut BubbleWrapper, index2: & hashbrown::HashMap<String, 
         }
     }
 }
-
-
-
-/// Write bed file
-/// Documentation found here doc.md
-pub fn writing_bed_traversals(h: &BubbleWrapper, index2: & HashMap<String, Vec<usize>>, paths: &Vec<NPath>, out: &str){
-    let f = File::create([out, "traversal", "bed"].join(".")).expect("Unable to create file");
-    let mut f = BufWriter::new(f);
-    for x in h.bubbles.iter(){
-        for y in x.traversals.iter(){
-            for x1 in y.pos.iter(){
-
-                let k = h.intervals.get(*x1 as usize).unwrap();
-                let from_id: usize = index2.get(&paths[k.acc as usize].name).unwrap()[k.from as usize];
-                let mut to_id:usize = index2.get(&paths[k.acc as usize].name).unwrap()[k.to as usize-1];
-                if k.to == k.from+1{
-                    to_id = from_id.clone();
-                }
-                let bub = h.bubbles.get(*h.id2id.get(&(k.from, k.to, k.acc)).unwrap() as usize).unwrap();
-                write!(f, "{}\t{}\t{}\t{}\t{}\t{}\n", k.acc, from_id, to_id, x.id, x.core, y.id).expect("Can't write traversal file");
-            }
-
-
-        }
-    }
-}
-
 
 
 // /// Writing traversal file

@@ -5,19 +5,16 @@ mod core;
 mod panSV;
 
 use hashbrown::HashMap;
-use std::env::args;
 use crate::core::counting::{CountNode};
-use crate::panSV::algo::{check_bubble_size, nest_version2, algo_panSV_multi, create_bubbles_stupid, bw_index, merge_traversals, connect_bubbles_multi, indel_detection};
+use crate::panSV::algo::{check_bubble_size, nest_version2, algo_panSV_multi, create_bubbles_stupid, merge_traversals, connect_bubbles_multi, indel_detection};
 use crate::core::graph_helper::graph2pos;
 use clap::{Arg, App, AppSettings};
 use std::path::Path;
 use std::process;
 use crate::panSV::panSV_core::{BubbleWrapper, PanSVpos};
 use gfaR_wrapper::{NGfa, GraphWrapper};
-use log::{debug, info, LevelFilter, warn};
-use crate::core::writer::{bubble_naming_new, bubble_parent_structure, writing_bed_traversals, writing_bed2};
-use std::io::Write;
-use crate::core::core::Posindex;
+use log::{ info, warn};
+use crate::core::writer::{bubble_naming_new, writing_bed2};
 use crate::core::logging::newbuilder;
 
 
@@ -99,7 +96,6 @@ fn main() {
     graph.from_file_direct2(graph_file);
 
     // Counting nodes
-    let mut bub_wrapper: BubbleWrapper = BubbleWrapper::new();
     let bi_wrapper: HashMap<String, Vec<PanSVpos>>;
     let g2p = graph2pos(&graph);
 
@@ -131,7 +127,7 @@ fn main() {
     info!("Write Traversal");
     writing_bed2(& mut bub_wrapper, &g2p, &graph.paths, outprefix);
 
-    graph = NGfa::new();
+    drop(graph); 
     info!("Categorize bubbles");
     check_bubble_size(&mut bub_wrapper);
 
