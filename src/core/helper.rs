@@ -17,11 +17,10 @@ pub fn hashset2string(input: &HashSet<u32>, sep:  &str) -> String{
 
 #[cfg(test)]
 mod helpertest {
-    use crate::core::helper::{bool2string_dir, vec2string};
+    use crate::core::helper::{vec2string};
 
     #[test]
     fn helpers() {
-        assert_eq!(bool2string_dir(true), "+");
         let k: Vec<u32> = vec![1,2,3,4];
         assert_eq!(vec2string(&k, "."), "1.2.3.4".to_string());
     }
