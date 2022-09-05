@@ -4,7 +4,7 @@ use std::process::Command;
 
 #[test]
 fn file_doesnt_exist() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("gSV")?;
+    let mut cmd = Command::cargo_bin("pan-sv")?;
     cmd.arg("-g example_data/testGrapdsadh.gfa").arg("-o hello");
     cmd.assert().stderr(predicate::str::contains("No file with such name"));
 
@@ -13,7 +13,7 @@ fn file_doesnt_exist() -> Result<(), Box<dyn std::error::Error>> {
 
 #[test]
 fn file_doesnt_exist2() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("gSV")?;
+    let mut cmd = Command::cargo_bin("pan-sv")?;
     cmd.arg("-g example_data/testGraph.gfa").arg("-o jo");
     cmd.assert().success();
     Ok(())
