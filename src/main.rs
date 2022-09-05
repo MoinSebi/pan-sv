@@ -72,7 +72,7 @@ fn main() {
 
     //-------------------------------------------------------------------------------------------------
 
-    info!("Welcome to pan-sv");
+    info!("Running pan-sv");
     let threads= matches.value_of("threads").unwrap().parse().unwrap();
 
     // Check if graph is running
@@ -139,25 +139,7 @@ fn main() {
 
     info!("Writing bubble stats");
     bubble_naming_new(&bub_wrapper.bubbles, outprefix);
-    //bubble_parent_structure(&bub_wrapper.bubbles, outprefix);
 
-
-
-
-    //writing_bed_traversals(&bub_wrapper, &g2p, &graph.paths, outprefix);
-
-
-    // if matches.is_present("traversal"){
-    //     info!("Writing traversal");
-    //     writing_traversals(&bub_wrapper, outprefix);
-    // }
-    //
-    // if matches.is_present("unique"){
-    //     info!("Writing traversal");
-    //     let size: usize = matches.value_of("unique").unwrap().parse().unwrap();
-    //     writing_uniques_bed(&bub_wrapper, &g2p, outprefix, size);
-    //     writing_uniques_bed_stats(&bub_wrapper, &g2p, outprefix, size);
-    // }
 
 
 
