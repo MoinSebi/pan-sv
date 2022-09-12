@@ -43,14 +43,10 @@ Big: Biggest traversal >= 50 bp
 
 
 ## Bed output
-| Col | Type   | Description                         |
-|-----|--------|-------------------------------------|
-| 1   | String | Genome name                         |
-| 2   | int    | Start position                      |
-| 3   | int    | End position                        |
-| 4   | int    | Bubble id                           |
-| 5   | int    | Bubble core level                   |
-| 6   | int    | Bubble category                     |
-| 7   | bool   | Maximum size of the bubble (<50 bp) |
-| 8   | int    | Maximum size of the bubble          |
-| 9   | int    | Minimum size of the bubble          |
+| Col | Type   | Description     |
+|-----|--------|-----------------|
+| 1   | String | Genome name     |
+| 2   | int    | Start position  |
+| 3   | int    | End position    |
+| 4   | int    | Bubble id       |
+| 5   | int    | Traversal id    |

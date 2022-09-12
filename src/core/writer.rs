@@ -67,12 +67,11 @@ pub fn writing_bed_solot(r: &mut BubbleWrapper, index2: & hashbrown::HashMap<Str
                 }
                 x.length = (to_id - from_id) as u32;
 
-                write!(f, "{}\t{}\t{}\t{}\t{}\t{}\t\n",
+                write!(f, "{}\t{}\t{}\t{}\t{}\t\n",
                        paths[pos.acc as usize].name,
                        from_id,
                        to_id,
                        bub.id,
-                       bub.core,
                 x.id).expect("Not able to write to file");
             }
         }

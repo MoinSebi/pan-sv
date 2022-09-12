@@ -1,8 +1,8 @@
 # pan-sv
 
-Bubble detection using pan-level approach in variation graphs. Reporting variation represented in the graph itself. PanSV has two output files: 
-1) bubbles statistic and 
-2) BED file for start and end position found in all sequences in the graph
+Bubble detection using pan-level approach in variation graphs. Reporting variation based on pan-genomix information stored in paths. 
+
+
 
 ## Algorithm 
 ![Alt text](doc/algo_simple.png "Algorithm simple")
@@ -17,8 +17,6 @@ cargo build --release
 ```
 
 ## Running 
-
-
 **Help message**
 ```text 
 panSV 0.1.0
@@ -49,7 +47,7 @@ Processing information:
     -q                  No updating INFO messages
     -v <verbose>        -v = DEBUG | -vv = TRACE
 ```
-If delimiter is set, counting will be according to sample_name and not path information.   
+If delimiter is set, counting will be according to sample_name (see below) and not the path name.   
 [PanSN-spec](https://github.com/pangenome/PanSN-spec): [sample_name][delim][haplotype_id][delim][contig_or_scaffold_name]
 
 
@@ -59,10 +57,11 @@ If delimiter is set, counting will be according to sample_name and not path info
 ```
 
 **TODO**
-- [ ] Add multithreading in bubble creation 
-- [ ] Remove some INFO messages
-- [ ] Add some additional output options
+- [ ] More tests for validation
+- [ ] Check if everything is working accordingly
 
 
 ### Output
+1) bubbles statistic and
+2) BED file for start and end position found in all sequences in the graph
 [Documentation](doc.md)
