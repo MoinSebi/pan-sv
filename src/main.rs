@@ -92,6 +92,7 @@ fn main() {
 
 
     // Read the graph
+    info!("Reading the graph");
     let mut graph: NGfa = NGfa::new();
     graph.from_file_direct2(graph_file);
 

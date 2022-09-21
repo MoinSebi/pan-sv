@@ -10,7 +10,13 @@ use bifurcation::helper::chunk_inplace;
 use hashbrown::{HashMap, HashSet};
 use log::{debug, info};
 
-/// Multithreading bubble detection in panSV
+/// Detect start and end position of bubbles
+///
+/// Idea:
+/// 1. Iterate over each path
+/// 2. Save start, end position (index) + core level of bubbles
+/// 3. Save the structure in a HashMap
+///
 pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: CountNode, threads: &usize) -> HashMap<String, Vec<PanSVpos>>{
     info!("Running pan-sv algorithm");
 
@@ -132,7 +138,7 @@ pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: CountNode, threads: &usize) 
     result_result
 }
 
-/// Sorting vector in hashmaps
+/// Sort the pansv vector
 ///
 /// smallest a into biggest b
 pub fn sort_trav(result:  HashMap<String, Vec<PanSVpos>>) -> HashMap<String, Vec<PanSVpos>>{
@@ -155,7 +161,14 @@ pub fn sort_trav(result:  HashMap<String, Vec<PanSVpos>>) -> HashMap<String, Vec
     new_result
 }
 
-/// This function creates bubbles
+/// Creating bubbles and more
+///
+/// 1. Iterate over each "path"
+///     1. Get the node at each start and end position
+///     2. Create a new data: (start_node, end_node, (start_index, end_index, path_id), core number)
+/// 2. Create a bubble with:
+///     1. id2id = (node1, node2, acc) -> posindex
+///     2. intervals = [posindex]
 ///
 /// (start, stop, acc), Vec<(Posindex(start, stop, acc),
 pub fn create_bubbles_stupid(input: & HashMap<String, Vec<PanSVpos>>, paths: &   Vec<NPath>, path2index: &HashMap<String, usize>, threads: &usize) -> (Vec<((u32, u32, u32), Vec<(Posindex, u32)>)>, BubbleWrapper) {
@@ -219,7 +232,10 @@ pub fn create_bubbles_stupid(input: & HashMap<String, Vec<PanSVpos>>, paths: &  
 
 
 #[inline]
-/// Add
+/// Convert the data
+///
+/// Hashmap (node1, node2, accession), [(index1, index2, core)]
+///
 pub fn add_new_bubbles(input: Vec<((u32, u32), Posindex, u32)>, f: &mut MutexGuard<HashMap<(u32, u32, u32), Vec<Posindex>>>){
     debug!("Add new bubbles: Index");
     for x in input.into_iter(){
@@ -229,13 +245,16 @@ pub fn add_new_bubbles(input: Vec<((u32, u32), Posindex, u32)>, f: &mut MutexGua
 
 
 
-/// Create
+/// Creates bubble wrapper index
+/// 1. id2id = (from_index, to_index, acc_id) -> pos_index
+/// 2. intervals = [from_index, to_index, acc_id]
 pub fn bw_index(input: HashMap<(u32, u32, u32), Vec<Posindex>>) ->  (Vec<((u32, u32, u32), Vec<(Posindex, u32)>)>, BubbleWrapper){
     info!("BW INDEX");
     let mut bw = BubbleWrapper::new();
     let mut res1 = Vec::new();
 
     let mut count = 0;
+    // Iterate over all "personal" bubbles and check all intervals
     for (index1, x) in input.into_iter().enumerate(){
         let mut o = Vec::new();
         for y in x.1.into_iter(){
@@ -258,7 +277,8 @@ pub fn bw_index(input: HashMap<(u32, u32, u32), Vec<Posindex>>) ->  (Vec<((u32, 
 
 
 
-
+/// You have a list of all start and end positions and try to merge those, who are same
+///
 pub fn merge_traversals(input: Vec<((u32, u32, u32), Vec<(Posindex, u32)>)>, paths: & Vec<NPath>, bw: &mut BubbleWrapper, threads: &usize){
     info!("Merge intervals");
     let chunks = chunk_inplace(input, threads.clone());
@@ -326,7 +346,8 @@ pub fn merge_traversals(input: Vec<((u32, u32, u32), Vec<(Posindex, u32)>)>, pat
 
 }
 
-
+/// You actually create bubbles
+///
 pub fn make_bubbles(bw: &mut BubbleWrapper,  u: Vec<Vec<((u32, u32, u32), Vec<Vec<u32>>)>>) {
     info!("Make real bubbles");
     let mut tcount = 0;
@@ -457,7 +478,8 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  Bubble
 
 }
 
-
+/// Take the "network" and merge it into the graph structure
+///
 pub fn merge_bubbles(hm: HashMap<(u32, u32), Network>, result: &mut MutexGuard<HashMap<u32,   HashSet<u32>>>, bw: &Arc<HashMap<(u32, u32, u32), u32>>, s: &u32){
 
     let s2 = s.clone();
