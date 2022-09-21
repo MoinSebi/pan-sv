@@ -195,9 +195,8 @@ pub fn create_bubbles_stupid(input: & HashMap<String, Vec<PanSVpos>>, paths: &  
         let carc_output = arc_output.clone();
 
         let handle = thread::spawn(move || {
-
+            let mut result = Vec::new();
             for path in chunk {
-                let mut result = Vec::new();
                 let path_id = *p2i2.get(&path.name).unwrap() as u32;
                 for pos in carc_input[&path.name].iter() {
                     let m1 = path.nodes[pos.start as usize];
@@ -208,14 +207,14 @@ pub fn create_bubbles_stupid(input: & HashMap<String, Vec<PanSVpos>>, paths: &  
                     result.push((bub_ids, pindex, pos.core));
                 }
                 result.shrink_to_fit();
-                let mut h = carc_output.lock().unwrap();
-                add_new_bubbles(result, &mut h);
-
                 // This is printing
-                let mut imut = carc_index.lock().unwrap();
-                *imut = *imut + 1;
-                debug!("({}/{}) {}", imut, carc_total_len, path.name );
+                // let mut imut = carc_index.lock().unwrap();
+                // *imut = *imut + 1;
+                // debug!("({}/{}) {}", imut, carc_total_len, path.name );
             }
+            let mut h = carc_output.lock().unwrap();
+            add_new_bubbles(result, &mut h);
+
 
         });
         handles.push(handle);
