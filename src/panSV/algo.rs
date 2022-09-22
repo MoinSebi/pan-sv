@@ -7,6 +7,7 @@ use gfaR_wrapper::NPath;
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::thread;
 use bifurcation::helper::chunk_inplace;
+use crossbeam_channel::unbounded;
 use hashbrown::{HashMap, HashSet};
 use log::{debug, info};
 
@@ -412,29 +413,32 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  Bubble
     let genome_count = Arc::new(Mutex::new(0));
 
     let chunks = chunk_inplace(g, threads.clone());
-    let arc_result = Arc::new(Mutex::new(Vec::new()));
+    let ff = chunks.len();
+    //let arc_result = Arc::new(Mutex::new(Vec::new()));
 
     let arc_p2i = Arc::new(p2i.clone());
 
-    let mut handles = Vec::new();
+    //let mut handles = Vec::new();
 
 
     let arc_id2id = Arc::new(result.id2id);
 
 
+    let (send, rev) = unbounded();
 
 
 
     for chunk in chunks{
+        let send = send.clone();
         //let j = rr.clone();
         let carc_genome_count = genome_count.clone();
         let carc_total_len = total_len.clone();
-        let card_result = arc_result.clone();
+        //let card_result = arc_result.clone();
 
         let carc_p2i = arc_p2i.clone();
         let card_id2id = arc_id2id.clone();
 
-        let handle = thread::spawn(move || {
+        thread::spawn(move || {
             let mut gg = vec![];
             for (k,v) in chunk.into_iter(){
                 let start_end = v.into_iter().map(|s| (s.start, s.end)).collect();
@@ -455,19 +459,18 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  Bubble
             for (p2i2, network) in gg.into_iter(){
                 merge_bubbles(network, & mut rr, &card_id2id, &p2i2);
             }
-            let mut rr2 = card_result.lock().unwrap();
-            rr2.push(rr);
+            send.send(rr);
         });
-        handles.push(handle);
     }
-    for handle in handles {
-        handle.join().unwrap()
+    let mut f = vec![];
+    for x in 0..ff{
+        f.push(rev.recv().unwrap());
     }
 
     info!("Merge in bubble space");
     let mut r2 = BubbleWrapper::new();
     r2.bubbles = result.bubbles;
-    for x in Arc::try_unwrap(arc_result).unwrap().into_inner().unwrap().into_iter(){
+    for x in f{
         in_bubbles(x, &mut r2.bubbles);
     }
 
