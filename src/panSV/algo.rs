@@ -427,7 +427,6 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  Bubble
     let (send, rev) = unbounded();
 
 
-
     for chunk in chunks{
         let send = send.clone();
         //let j = rr.clone();
@@ -453,13 +452,12 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  Bubble
                 // let mut imut = carc_genome_count.lock().unwrap();
                 // *imut = *imut + 1;
                 // debug!("({}/{}) {}", imut, carc_total_len, k);
-
+                let mut rr = HashMap::new();
+                for (p2i2, network) in gg.into_iter(){
+                    merge_bubbles(network, & mut rr, &card_id2id, &p2i2);
+                }
+                send.send(rr);
             }
-            let mut rr = HashMap::new();
-            for (p2i2, network) in gg.into_iter(){
-                merge_bubbles(network, & mut rr, &card_id2id, &p2i2);
-            }
-            send.send(rr);
         });
     }
 
