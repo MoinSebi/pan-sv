@@ -405,6 +405,7 @@ pub fn indel_detection(r: &mut BubbleWrapper, paths: &Vec<NPath>, last_id: u32){
 pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  BubbleWrapper, p2i: &HashMap<String, usize>, threads: &usize) -> BubbleWrapper{
     info!("Connect bubbles");
 
+    let ff = hm.len();
     let mut g: Vec<(String, Vec<PanSVpos>)> = hm.into_iter().map(|s| s).collect();
     g.shrink_to_fit();
 
@@ -413,7 +414,6 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  Bubble
     let genome_count = Arc::new(Mutex::new(0));
 
     let chunks = chunk_inplace(g, threads.clone());
-    let ff = chunks.len();
     //let arc_result = Arc::new(Mutex::new(Vec::new()));
 
     let arc_p2i = Arc::new(p2i.clone());
@@ -438,14 +438,13 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  Bubble
         let card_id2id = arc_id2id.clone();
 
         thread::spawn(move || {
-            let mut gg = vec![];
+            //let mut gg = vec![];
             for (k,v) in chunk.into_iter(){
                 let start_end = v.into_iter().map(|s| (s.start, s.end)).collect();
                 let mut network = related_intervals::create_network_hashmap(&start_end);
 
                 make_nested(&start_end, & mut network);
                 let path2index_var = &(carc_p2i.get(&k).unwrap().clone() as u32);
-                gg.push((path2index_var.clone(), network));
 
 
                 // Writing
@@ -453,9 +452,7 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  Bubble
                 // *imut = *imut + 1;
                 // debug!("({}/{}) {}", imut, carc_total_len, k);
                 let mut rr = HashMap::new();
-                for (p2i2, network) in gg.into_iter(){
-                    merge_bubbles(network, & mut rr, &card_id2id, &p2i2);
-                }
+                merge_bubbles(network, & mut rr, &card_id2id, &path2index_var);
                 send.send(rr);
             }
         });
