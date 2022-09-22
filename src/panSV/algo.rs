@@ -462,16 +462,12 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  Bubble
             send.send(rr);
         });
     }
-    let mut f = vec![];
-    for x in 0..ff{
-        f.push(rev.recv().unwrap());
-    }
 
     info!("Merge in bubble space");
     let mut r2 = BubbleWrapper::new();
     r2.bubbles = result.bubbles;
-    for x in f{
-        in_bubbles(x, &mut r2.bubbles);
+    for x in 0..ff{
+        in_bubbles(rev.recv().unwrap(), &mut r2.bubbles);
     }
 
     r2.anchor2bubble = result.anchor2bubble;
