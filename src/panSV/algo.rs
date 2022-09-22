@@ -412,7 +412,7 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  Bubble
     let genome_count = Arc::new(Mutex::new(0));
 
     let chunks = chunk_inplace(g, threads.clone());
-    let arc_result = Arc::new(Mutex::new(HashMap::new()));
+    let arc_result = Arc::new(Mutex::new(Vec::new()));
 
     let arc_p2i = Arc::new(p2i.clone());
 
@@ -451,11 +451,12 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  Bubble
                 // debug!("({}/{}) {}", imut, carc_total_len, k);
 
             }
-            let mut rr = card_result.lock().unwrap();
+            let mut rr = HashMap::new();
             for (p2i2, network) in gg.into_iter(){
                 merge_bubbles(network, & mut rr, &card_id2id, &p2i2);
-
             }
+            let mut rr2 = card_result.lock().unwrap();
+            rr2.push(rr);
         });
         handles.push(handle);
     }
@@ -466,7 +467,9 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  Bubble
     info!("Merge in bubble space");
     let mut r2 = BubbleWrapper::new();
     r2.bubbles = result.bubbles;
-    in_bubbles(Arc::try_unwrap(arc_result).unwrap().into_inner().unwrap(), &mut r2.bubbles);
+    for x in Arc::try_unwrap(arc_result).unwrap().into_inner().unwrap().into_iter(){
+        in_bubbles(x, &mut r2.bubbles);
+    }
 
     r2.anchor2bubble = result.anchor2bubble;
     r2.intervals = result.intervals;
@@ -483,8 +486,7 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  Bubble
 
 /// Take the "network" and merge it into the graph structure
 ///
-pub fn merge_bubbles(hm: HashMap<(u32, u32), Network>, result: &mut MutexGuard<HashMap<u32,   HashSet<u32>>>, bw: &Arc<HashMap<(u32, u32, u32), u32>>, s: &u32){
-
+pub fn merge_bubbles(hm: HashMap<(u32, u32), Network>, result: &mut HashMap<u32,   HashSet<u32>>, bw: &Arc<HashMap<(u32, u32, u32), u32>>, s: &u32){
     let s2 = s.clone();
     for (k,v) in hm.into_iter() {
         let bub_id = bw.get(&(k.0, k.1, s2)).unwrap();
