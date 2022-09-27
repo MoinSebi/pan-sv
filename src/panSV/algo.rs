@@ -187,24 +187,24 @@ pub fn create_bubbles_stupid(input: & HashMap<String, Vec<PanSVpos>>, paths: &  
     info!("Create bubbles");
     let chunks = chunk_inplace(paths.clone(), threads.clone());
 
+
     let arc_input = Arc::new(input.clone());
     let arc_index = Arc::new(Mutex::new(0));
     let arc_total_len = Arc::new(input.len());
 
-    let arc_output = Arc::new(Mutex::new(HashMap::new()));
     let arc_path2index = Arc::new(path2index.clone());
 
 
     let mut handles = Vec::new();
+    let (send, rev) = unbounded();
 
 
     for chunk in chunks {
+        let send = send.clone();
         let carc_index = arc_index.clone();
         let carc_total_len = arc_total_len.clone();
-
         let carc_input = arc_input.clone();
         let p2i2 = arc_path2index.clone();
-        let carc_output = arc_output.clone();
 
         let handle = thread::spawn(move || {
             let mut result = Vec::new();
@@ -224,20 +224,24 @@ pub fn create_bubbles_stupid(input: & HashMap<String, Vec<PanSVpos>>, paths: &  
                 // *imut = *imut + 1;
                 // debug!("({}/{}) {}", imut, carc_total_len, path.name );
             }
-            let mut h = carc_output.lock().unwrap();
-            add_new_bubbles(result, &mut h);
+            send.send(result);
 
 
         });
         handles.push(handle);
     }
 
-    for handle in handles {
-        handle.join().unwrap()
+    let mut result = HashMap::new();
+
+    for x in 0..*threads{
+        let v = rev.recv().unwrap();
+        add_new_bubbles(v, &mut result);
+
+
     }
 
 
-    let (u,p) = bw_index( Arc::try_unwrap(arc_output).unwrap().into_inner().unwrap());
+    let (u,p) = bw_index( result);
     (u, p)
 }
 
@@ -247,7 +251,7 @@ pub fn create_bubbles_stupid(input: & HashMap<String, Vec<PanSVpos>>, paths: &  
 ///
 /// Hashmap (node1, node2, accession), [(index1, index2, core)]
 ///
-pub fn add_new_bubbles(input: Vec<((u32, u32), Posindex, u32)>, f: &mut MutexGuard<HashMap<(u32, u32, u32), Vec<Posindex>>>){
+pub fn add_new_bubbles(input: Vec<((u32, u32), Posindex, u32)>, f: &mut HashMap<(u32, u32, u32), Vec<Posindex>>){
     debug!("Add new bubbles: Index");
     for x in input.into_iter(){
         f.entry((x.0.0, x.0.1, x.2)).and_modify(| e| {e.push(x.1.clone())}).or_insert(vec![(x.1.clone())]);
