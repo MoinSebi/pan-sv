@@ -1,4 +1,5 @@
 use std::cmp::{max, min};
+use std::ops::Deref;
 use crate::core::counting::{CountNode};
 use crate::panSV::panSV_core::{PanSVpos, TmpPos, BubbleWrapper};
 use crate::core::core::{Posindex, Bubble, Traversal};
@@ -135,29 +136,39 @@ pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: CountNode, threads: &usize) 
     }
 
 
-    let result_result = sort_trav(Arc::try_unwrap(arc_results).unwrap().into_inner().unwrap());
+    let result_result = sort_trav(Arc::try_unwrap(arc_results).unwrap().into_inner().unwrap(), threads);
     result_result
 }
 
 /// Sort the pansv vector
 ///
 /// smallest a into biggest b
-pub fn sort_trav(result:  HashMap<String, Vec<PanSVpos>>) -> HashMap<String, Vec<PanSVpos>>{
+pub fn sort_trav(result:  HashMap<String, Vec<PanSVpos>>, threads: &usize) -> HashMap<String, Vec<PanSVpos>>{
     info!("Sorting detected bubbles");
 
     let mut new_result: HashMap<String, Vec<PanSVpos>> = HashMap::new();
+    let mut g: Vec<(String, Vec<PanSVpos>)> = result.into_iter().map(|s| s).collect();
+    let leng = g.len();
+    let chunks = chunk_inplace(g, threads.clone());
+    let (send, rev) = unbounded();
 
+    for chunk in chunks.into_iter() {
+        let send = send.clone();
+        let handle = thread::spawn(move || {
+            for (key, panSV_vec) in chunk.into_iter(){
+                let mut panSV_new = panSV_vec.clone();
+                panSV_new.sort_by(|a, b| (a.start.cmp(&b.start).then(b.end.cmp(&a.end))));
+                send.send((key, panSV_new));
 
-    for (key, panSV_vec) in result.iter(){
-        let mut panSV_new = Vec::new();
-        for entry in panSV_vec.iter(){
-            panSV_new.push(entry.clone());
-        }
-        panSV_new.sort_by(|a, b| (a.start.cmp(&b.start).then(b.end.cmp(&a.end))));
-        new_result.insert(key.to_owned().clone(), panSV_new) ;
-        //v.sort_by(|a, b| a.partial_cmp(b).unwrap());
-
+            }
+        });
     }
+    for x in 0..leng{
+        let (key, y) = rev.recv().unwrap();
+        new_result.insert(key, y);
+    }
+
+
     new_result.shrink_to_fit();
     new_result
 }
@@ -410,7 +421,7 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  Bubble
     g.shrink_to_fit();
 
     // For Counting
-    let total_len = Arc::new(g.len());
+    let total_len = Arc::new(g.len() as f64);
     let genome_count = Arc::new(Mutex::new(0));
 
     let chunks = chunk_inplace(g, threads.clone());
@@ -439,6 +450,8 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  Bubble
 
         thread::spawn(move || {
             //let mut gg = vec![];
+            let mut vv =  vec![];
+            let mut c = 0;
             for (k,v) in chunk.into_iter(){
                 let start_end = v.into_iter().map(|s| (s.start, s.end)).collect();
                 let mut network = related_intervals::create_network_hashmap(&start_end);
@@ -453,16 +466,28 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  Bubble
                 // debug!("({}/{}) {}", imut, carc_total_len, k);
                 let mut rr = HashMap::new();
                 merge_bubbles(network, & mut rr, &card_id2id, &path2index_var);
-                send.send(rr);
+                let cx = carc_total_len.deref();
+                vv.push(rr);
+                let d= (c as f64 / cx);
+                if d > 0.01{
+                    send.send(vv).unwrap();
+                    vv = Vec::new();
+                    c = 0;
+                }
+                c += 1;
             }
+            send.send(vv).unwrap();
         });
     }
 
     info!("Merge in bubble space");
     let mut r2 = BubbleWrapper::new();
     r2.bubbles = result.bubbles;
+    send.len();
     for x in 0..ff{
-        in_bubbles(rev.recv().unwrap(), &mut r2.bubbles);
+        for y in rev.recv().unwrap(){
+            in_bubbles(y, &mut r2.bubbles);
+        }
     }
 
     r2.anchor2bubble = result.anchor2bubble;
