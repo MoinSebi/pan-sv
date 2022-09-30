@@ -114,10 +114,13 @@ fn main() {
         info!("Counting nodes");
         counts.counting_graph(&graph);
     }
-    graph.nodes = HashMap::new();
+    let paths = graph.paths.clone();
+    let p2id = graph.path2id.clone();
+    drop(graph);
+
 
     let bi_wrapper: HashMap<String, Vec<PanSVpos>>;
-    bi_wrapper = algo_panSV_multi(&graph.paths, counts, &threads);
+    bi_wrapper = algo_panSV_multi(&paths, counts, &threads);
 
 
     let mut bub_intervals: Vec<Posindex> = Vec::new();
@@ -126,19 +129,23 @@ fn main() {
     let mut id2id: HashMap<(u32, u32, u32), u32> = HashMap::new();
 
 
-    let tmp1 = create_bubbles_stupid(&bi_wrapper,  &mut id2id, &mut bub_intervals, &graph.paths, &graph.path2id, &threads);
+    let tmp1 = create_bubbles_stupid(&bi_wrapper,  &mut id2id, &mut bub_intervals, &paths, &p2id, &threads);
+    id2id.shrink_to_fit();
+    bub_intervals.shrink_to_fit();
+
+
     //info!("{:?}", bub_wrapper);
-    merge_traversals(tmp1, &graph.paths, &mut bub_bubbles, &mut anchor2bubble, &threads);
-    id2id = connect_bubbles_multi(bi_wrapper, &mut bub_bubbles, id2id,&graph.path2id, &threads);
+    merge_traversals(tmp1, &paths, &mut bub_bubbles, &mut anchor2bubble, &threads);
+    bub_bubbles.shrink_to_fit();
+    id2id = connect_bubbles_multi(bi_wrapper, &mut bub_bubbles, id2id,&p2id, &threads);
     let interval_numb = bub_intervals.len() as u32;
 
-    indel_detection(&mut bub_bubbles, &anchor2bubble, &mut id2id, &mut bub_intervals, &graph.paths, interval_numb);
+    indel_detection(&mut bub_bubbles, &anchor2bubble, &mut id2id, &mut bub_intervals, &paths, interval_numb);
 
 
     info!("Write Traversal");
-    writing_bed_solot(& mut bub_bubbles, & bub_intervals, &g2p, &graph.paths, outprefix);
+    writing_bed_solot(& mut bub_bubbles, & bub_intervals, &g2p, &paths, outprefix);
 
-    drop(graph);
     info!("Categorize bubbles");
     check_bubble_size(&mut bub_bubbles);
 

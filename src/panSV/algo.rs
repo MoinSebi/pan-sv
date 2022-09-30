@@ -122,7 +122,6 @@ pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: CountNode, threads: &usize) 
                 result_panSV.get_mut(&x.name).unwrap().shrink_to_fit();
             }
 
-
             let mut u = carc_results.lock().unwrap();
             for (key, value) in result_panSV {
                 u.insert(key, value);
@@ -227,7 +226,7 @@ pub fn create_bubbles_stupid(input: & HashMap<String, Vec<PanSVpos>>, id2id: &mu
                 // let mut imut = carc_index.lock().unwrap();
                 // *imut = *imut + 1;
                 // debug!("({}/{}) {}", imut, carc_total_len, path.name );
-                send.send(result).unwrap(); ;
+                send.send(result).unwrap();
             }
 
 
@@ -239,8 +238,6 @@ pub fn create_bubbles_stupid(input: & HashMap<String, Vec<PanSVpos>>, id2id: &mu
     for x in 0..chunk_n{
         let v = rev.recv().unwrap();
         add_new_bubbles(v, &mut result);
-
-
     }
 
 
@@ -266,6 +263,7 @@ pub fn add_new_bubbles(input: Vec<((u32, u32), Posindex, u32)>, f: &mut HashMap<
 /// Creates bubble wrapper index
 /// 1. id2id = (from_index, to_index, acc_id) -> pos_index
 /// 2. intervals = [from_index, to_index, acc_id]
+/// 3. output: (from_index, to_index, acc_index), Vec<PosIndex>)
 pub fn bw_index(input: HashMap<(u32, u32, u32), Vec<Posindex>>, id2id: &mut HashMap<(u32, u32, u32), u32>, intervals: &mut Vec<Posindex>) ->  Vec<((u32, u32, u32), Vec<(Posindex, u32)>)>{
     info!("BW INDEX");
     let mut res1 = Vec::new();
@@ -469,7 +467,6 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, bubbles: &mut V
                 // debug!("({}/{}) {}", imut, carc_total_len, k);
                 let mut rr = HashMap::new();
                 merge_bubbles(network, & mut rr, &card_id2id, &path2index_var);
-                let cx = carc_total_len.deref();
                 vv.push(rr);
             }
             send.send(vv).unwrap();
