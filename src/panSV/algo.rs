@@ -1,4 +1,5 @@
 use std::cmp::{max, min};
+use std::hash::Hash;
 use std::ops::Deref;
 use crate::core::counting::{CountNode};
 use crate::panSV::panSV_core::{PanSVpos, TmpPos, BubbleWrapper};
@@ -158,7 +159,8 @@ pub fn sort_trav(result:  HashMap<String, Vec<PanSVpos>>, threads: &usize) -> Ha
             for (key, panSV_vec) in chunk.into_iter(){
                 let mut panSV_new = panSV_vec.clone();
                 panSV_new.sort_by(|a, b| (a.start.cmp(&b.start).then(b.end.cmp(&a.end))));
-                send.send((key, panSV_new));
+                send.send((key, panSV_new)).unwrap();
+
 
             }
         });
@@ -183,7 +185,7 @@ pub fn sort_trav(result:  HashMap<String, Vec<PanSVpos>>, threads: &usize) -> Ha
 ///     2. intervals = [posindex]
 ///
 /// (start, stop, acc), Vec<(Posindex(start, stop, acc),
-pub fn create_bubbles_stupid(input: & HashMap<String, Vec<PanSVpos>>, paths: &   Vec<NPath>, path2index: &HashMap<String, usize>, threads: &usize) -> (Vec<((u32, u32, u32), Vec<(Posindex, u32)>)>, BubbleWrapper) {
+pub fn create_bubbles_stupid(input: & HashMap<String, Vec<PanSVpos>>, id2id: &mut HashMap<(u32, u32, u32), u32>, intervals: &mut Vec<Posindex>, paths: &   Vec<NPath>, path2index: &HashMap<String, usize>, threads: &usize) -> Vec<((u32, u32, u32), Vec<(Posindex, u32)>)> {
     info!("Create bubbles");
     let chunks = chunk_inplace(paths.clone(), threads.clone());
     let chunk_n = input.len();
@@ -242,8 +244,8 @@ pub fn create_bubbles_stupid(input: & HashMap<String, Vec<PanSVpos>>, paths: &  
     }
 
 
-    let (u,p) = bw_index( result);
-    (u, p)
+    let u= bw_index( result, id2id, intervals);
+    u
 }
 
 
@@ -264,19 +266,20 @@ pub fn add_new_bubbles(input: Vec<((u32, u32), Posindex, u32)>, f: &mut HashMap<
 /// Creates bubble wrapper index
 /// 1. id2id = (from_index, to_index, acc_id) -> pos_index
 /// 2. intervals = [from_index, to_index, acc_id]
-pub fn bw_index(input: HashMap<(u32, u32, u32), Vec<Posindex>>) ->  (Vec<((u32, u32, u32), Vec<(Posindex, u32)>)>, BubbleWrapper){
+pub fn bw_index(input: HashMap<(u32, u32, u32), Vec<Posindex>>, id2id: &mut HashMap<(u32, u32, u32), u32>, intervals: &mut Vec<Posindex>) ->  Vec<((u32, u32, u32), Vec<(Posindex, u32)>)>{
     info!("BW INDEX");
     let mut bw = BubbleWrapper::new();
     let mut res1 = Vec::new();
+
 
     let mut count = 0;
     // Iterate over all "personal" bubbles and check all intervals
     for (index1, x) in input.into_iter().enumerate(){
         let mut o = Vec::new();
         for y in x.1.into_iter(){
-            bw.id2id.insert((y.from, y.to, y.acc), index1 as u32);
+            id2id.insert((y.from, y.to, y.acc), index1 as u32);
             o.push((y.clone(),count));
-            bw.intervals.push(y);
+            intervals.push(y);
             count += 1;
 
         }
@@ -284,18 +287,15 @@ pub fn bw_index(input: HashMap<(u32, u32, u32), Vec<Posindex>>) ->  (Vec<((u32, 
         res1.push((x.0, o));
     }
 
-    res1.shrink_to_fit();
-    bw.intervals.shrink_to_fit();
-    bw.id2id.shrink_to_fit();
 
-    (res1, bw)
+    res1
 }
 
 
 
 /// You have a list of all start and end positions and try to merge those, who are same
 ///
-pub fn merge_traversals(input: Vec<((u32, u32, u32), Vec<(Posindex, u32)>)>, paths: & Vec<NPath>, bw: &mut BubbleWrapper, threads: &usize){
+pub fn merge_traversals(input: Vec<((u32, u32, u32), Vec<(Posindex, u32)>)>, paths: & Vec<NPath>, bubbles: &mut Vec<Bubble>, anchor2bubble: &mut HashMap<(u32, u32), u32>, threads: &usize){
     info!("Merge intervals");
     let chunks = chunk_inplace(input, threads.clone());
 
@@ -357,28 +357,28 @@ pub fn merge_traversals(input: Vec<((u32, u32, u32), Vec<(Posindex, u32)>)>, pat
     let u = Arc::try_unwrap(arc_res).unwrap();
     let mut u = u.into_inner().unwrap();
     u.shrink_to_fit();
-    make_bubbles(bw, u);
+    make_bubbles(bubbles, anchor2bubble, u);
 
 
 }
 
 /// You actually create bubbles
 ///
-pub fn make_bubbles(bw: &mut BubbleWrapper,  u: Vec<Vec<((u32, u32, u32), Vec<Vec<u32>>)>>) {
+pub fn make_bubbles(bubbles: &mut Vec<Bubble>, anchor2bubble: &mut HashMap<(u32, u32), u32>,  u: Vec<Vec<((u32, u32, u32), Vec<Vec<u32>>)>>) {
     info!("Make real bubbles");
     let mut tcount = 0;
     let mut i = 0;
     for x in u{
         for (bub, t) in x.into_iter() {
-            bw.anchor2bubble.insert((bub.0, bub.1), i as u32);
+            anchor2bubble.insert((bub.0, bub.1), i as u32);
             let ll = t.len();
-            bw.bubbles.push(Bubble::new(bub.2, bub.0, bub.1, i, t, tcount));
+            bubbles.push(Bubble::new(bub.2, bub.0, bub.1, i, t, tcount));
             tcount += ll as u32;
             i += 1;
         }
     }
-    bw.bubbles.shrink_to_fit();
-    bw.anchor2bubble.shrink_to_fit();
+    bubbles.shrink_to_fit();
+    anchor2bubble.shrink_to_fit();
 }
 
 
@@ -387,7 +387,7 @@ pub fn make_bubbles(bw: &mut BubbleWrapper,  u: Vec<Vec<((u32, u32, u32), Vec<Ve
 /// Iterate over nodes in path
 /// If two nodes after each othera are borders of bubbles
 /// Add traversal to bubble
-pub fn indel_detection(r: &mut BubbleWrapper, paths: &Vec<NPath>, last_id: u32){
+pub fn indel_detection(bubbles: &mut Vec<Bubble>, anchor2bubble: & HashMap<(u32, u32), u32>, id2id: &mut HashMap<(u32, u32, u32), u32>, intervals: &mut Vec<Posindex>, paths: &Vec<NPath>, last_id: u32){
     info!("InDel detection");
     let mut ll = last_id.clone();
     let mut last_tra = last_id.clone();
@@ -397,15 +397,14 @@ pub fn indel_detection(r: &mut BubbleWrapper, paths: &Vec<NPath>, last_id: u32){
             let m1 = path.nodes[x];
             let m2 = path.nodes[x+1];
             let ind: (u32, u32) = (min(m1, m2 ), max(m1, m2));
-            if r.anchor2bubble.contains_key(&ind){
+            if anchor2bubble.contains_key(&ind){
 
-                let bub =  r.bubbles.get_mut(*r.anchor2bubble.get(&ind).unwrap() as usize).unwrap();
+                let bub =  bubbles.get_mut(*anchor2bubble.get(&ind).unwrap() as usize).unwrap();
                 //if ! bub.acc.contains(& path.name) {
 
-
                 let trav: Traversal = Traversal {pos: vec![ll], id: last_tra, length: 0};
-                r.intervals.push(Posindex { from: (x as u32), to: ((x + 1) as u32), acc: i as u32});
-                r.id2id.insert(((x as u32), ((x + 1) as u32), i as u32), bub.id.clone());
+                intervals.push(Posindex { from: (x as u32), to: ((x + 1) as u32), acc: i as u32});
+                id2id.insert(((x as u32), ((x + 1) as u32), i as u32), bub.id.clone());
                 bub.traversals.push(trav);
                 ll += 1;
                 last_tra += 1;
@@ -418,10 +417,10 @@ pub fn indel_detection(r: &mut BubbleWrapper, paths: &Vec<NPath>, last_id: u32){
 /// Wrapper for connecting bubbles multithreaded
 ///
 ///
-pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  BubbleWrapper, p2i: &HashMap<String, usize>, threads: &usize) -> BubbleWrapper{
+pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, bubbles: &mut Vec<Bubble>, id2id: HashMap<(u32, u32, u32), u32>, p2i: &HashMap<String, usize>, threads: &usize) -> HashMap<(u32, u32, u32), u32>{
     info!("Connect bubbles");
 
-    let ff = hm.len();
+    let ff = threads.clone();
     let mut g: Vec<(String, Vec<PanSVpos>)> = hm.into_iter().map(|s| s).collect();
     g.shrink_to_fit();
 
@@ -437,7 +436,7 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  Bubble
     //let mut handles = Vec::new();
 
 
-    let arc_id2id = Arc::new(result.id2id);
+    let arc_id2id = Arc::new(id2id);
 
 
     let (send, rev) = unbounded();
@@ -473,38 +472,21 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, result:  Bubble
                 merge_bubbles(network, & mut rr, &card_id2id, &path2index_var);
                 let cx = carc_total_len.deref();
                 vv.push(rr);
-                let d= (c as f64 / cx);
-                if d > 0.01{
-                    send.send(vv).unwrap();
-                    vv = Vec::new();
-                    c = 0;
-                }
-                c += 1;
             }
             send.send(vv).unwrap();
         });
     }
 
     info!("Merge in bubble space");
-    let mut r2 = BubbleWrapper::new();
-    r2.bubbles = result.bubbles;
-    send.len();
     for x in 0..ff{
         for y in rev.recv().unwrap(){
-            in_bubbles(y, &mut r2.bubbles);
+            in_bubbles(y, bubbles);
         }
     }
 
-    r2.anchor2bubble = result.anchor2bubble;
-    r2.intervals = result.intervals;
-
     // get it back
-    r2.id2id = Arc::try_unwrap(arc_id2id).unwrap();
-    r2.bubbles.shrink_to_fit();
-    r2.anchor2bubble.shrink_to_fit();
-    r2.intervals.shrink_to_fit();
-    r2.id2id.shrink_to_fit();
-    r2
+    let id2id2 = Arc::try_unwrap(arc_id2id).unwrap();
+    id2id2
 
 }
 
@@ -534,13 +516,13 @@ pub fn in_bubbles(result: HashMap<u32, HashSet<u32>>, bw: &mut Vec<Bubble>){
 /// TODO
 /// - Categories (additional function)
 /// -
-pub fn check_bubble_size(h: & mut BubbleWrapper){
+pub fn check_bubble_size(bubbles: &mut Vec<Bubble>){
 
-    for x in 0..h.bubbles.len(){
+    for y in 0..bubbles.len(){
         let mut min = u32::MAX;
 
         let mut max = u32::MIN;
-        let bubble = h.bubbles.get_mut(x).unwrap();
+        let bubble = &mut bubbles[y];
         for x in bubble.traversals.iter() {
             if x.length > max {
                 max = x.length.clone();

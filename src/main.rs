@@ -14,6 +14,7 @@ use std::process;
 use crate::panSV::panSV_core::{PanSVpos};
 use gfaR_wrapper::{NGfa, GraphWrapper};
 use log::{ info, warn};
+use crate::core::core::{Bubble, Posindex};
 use crate::core::writer::{bubble_naming_new, writing_bed_solot};
 use crate::core::logging::newbuilder;
 
@@ -116,30 +117,36 @@ fn main() {
     }
     graph.nodes = HashMap::new();
     bi_wrapper = algo_panSV_multi(&graph.paths, counts, &threads);
-    let (tmp1, mut bub_wrapper) = create_bubbles_stupid(&bi_wrapper, &graph.paths,  &graph.path2id, &threads);
-    //info!("{:?}", bub_wrapper);
-    merge_traversals(tmp1, &graph.paths, &mut bub_wrapper, &threads);
-    bub_wrapper = connect_bubbles_multi(bi_wrapper, bub_wrapper, &graph.path2id, &threads);
-    let interval_numb = bub_wrapper.intervals.len() as u32;
+    let mut bub_intervals: Vec<Posindex> = Vec::new();
+    let mut bub_bubbles: Vec<Bubble> = Vec::new();
+    let mut anchor2bubble: HashMap<(u32, u32), u32> = HashMap::new();
+    let mut id2id: HashMap<(u32, u32, u32), u32> = HashMap::new();
 
-    indel_detection(& mut bub_wrapper, &graph.paths, interval_numb);
+
+    let tmp1 = create_bubbles_stupid(&bi_wrapper,  &mut id2id, &mut bub_intervals, &graph.paths, &graph.path2id, &threads);
+    //info!("{:?}", bub_wrapper);
+    merge_traversals(tmp1, &graph.paths, &mut bub_bubbles, &mut anchor2bubble, &threads);
+    id2id = connect_bubbles_multi(bi_wrapper, &mut bub_bubbles, id2id,&graph.path2id, &threads);
+    let interval_numb = bub_intervals.len() as u32;
+
+    indel_detection(&mut bub_bubbles, &anchor2bubble, &mut id2id, &mut bub_intervals, &graph.paths, interval_numb);
 
 
     info!("Write Traversal");
-    writing_bed_solot(& mut bub_wrapper, &g2p, &graph.paths, outprefix);
+    writing_bed_solot(& mut bub_bubbles, & bub_intervals, &g2p, &graph.paths, outprefix);
 
     drop(graph);
     info!("Categorize bubbles");
-    check_bubble_size(&mut bub_wrapper);
+    check_bubble_size(&mut bub_bubbles);
 
-    if matches.is_present("Nestedness"){
-        info!("Nestedness");
-        nest_version2(& mut bub_wrapper);
-    }
+    // if matches.is_present("Nestedness"){
+    //     info!("Nestedness");
+    //     nest_version2(& mut bub_wrapper);
+    // }
 
 
     info!("Writing bubble stats");
-    bubble_naming_new(&bub_wrapper.bubbles, outprefix);
+    bubble_naming_new(&bub_bubbles, outprefix);
 
 
 

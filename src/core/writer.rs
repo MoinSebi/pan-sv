@@ -2,8 +2,10 @@ use crate::core::core::Bubble;
 use std::fs::File;
 use std::io::{Write, BufWriter};
 use gfaR_wrapper::NPath;
+use hashbrown::HashMap;
 use crate::panSV::panSV_core::{BubbleWrapper};
 use crate::core::helper::{hashset2string};
+use crate::Posindex;
 
 /// Write bubbles with unique id
 /// Read doc/bubble.stats
@@ -50,11 +52,11 @@ pub fn bubble_parent_structure(hm1: & Vec<Bubble>, out: &str){
 /// Writing bed file
 /// Accession - FROM - TO - BUBBLE ID - BUBBLE CORE - TRAVERSAL
 /// Iterate over id2interval bubble_wrapper
-pub fn writing_bed_solot(r: &mut BubbleWrapper, index2: & hashbrown::HashMap<String, Vec<usize>>, paths: &Vec<NPath>, out: &str) {
+pub fn writing_bed_solot(bubbles: &mut Vec<Bubble>, intervals: &Vec<Posindex>, index2: & hashbrown::HashMap<String, Vec<usize>>, paths: &Vec<NPath>, out: &str) {
     let f = File::create([out, "bed"].join(".")).expect("Unable to create file");
     let mut f = BufWriter::new(f);
-    let p = &r.intervals;
-    let p2 = & mut r.bubbles;
+    let p = intervals;
+    let p2 = bubbles;
 
     for bub in p2.iter_mut() {
         for x in bub.traversals.iter_mut(){
