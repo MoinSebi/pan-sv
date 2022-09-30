@@ -561,53 +561,12 @@ pub fn check_bubble_size(bubbles: &mut Vec<Bubble>){
 
 }
 
-// #[allow(dead_code)]
-// /// Wrapper for nestedness function
-// pub fn nest_wrapper(h: & mut BubbleWrapper){
-//     for x in 0..h.id2bubble.len(){
-//         let k = h.id2bubble.get_mut(&(x as u32)).unwrap();
-//         if k.parents.len() == 0{
-//             k.nestedness = 1;
-//             let kk = k.children.clone();
-//             let mut seen = HashSet::new();
-//             seen.insert(k.id);
-//             for ok in kk.iter(){
-//                 nest_function(h, &ok, 2, &mut seen);
-//             }
-//
-//         }
-//     }
-// }
-//
-// #[allow(dead_code)]
-// /// Get nestedness functions
-// pub fn nest_function(h: & mut BubbleWrapper, id: &u32, core: u16, seen: & mut HashSet<u32>){
-//     let k = h.id2bubble.get_mut(id).unwrap();
-//
-//     if k.nestedness != 0{
-//         k.nestedness = min(k.nestedness, core)
-//     } else {
-//         k.nestedness = core
-//     }
-//     if k.children.len() > 0{
-//         let kk = k.children.clone();
-//         for x in kk.iter(){
-//             let mut seen2 = seen.clone();
-//             seen2.insert(k.id);
-//             if seen2.contains(x){
-//                 nest_function(h, &x, core +1, & mut seen2)
-//             }
-//         }
-//     }
-// }
-
-
 
 #[allow(dead_code)]
 /// Get the real nestedness
-pub fn nest_version2(bubbles: & mut Vec<Bubble>){
+pub fn nester_wrapper(bubbles: & mut Vec<Bubble>){
     for x in 0..bubbles.len(){
-        let level = go1(x as u32, bubbles) as u16;
+        let level = nester_rec(x as u32, bubbles) as u16;
         let g = bubbles.get_mut(x).unwrap();
         g.nestedness = level;
     }
@@ -615,7 +574,7 @@ pub fn nest_version2(bubbles: & mut Vec<Bubble>){
 
 #[allow(dead_code)]
 /// Function for nest_version2
-pub fn go1(id: u32, bubble: & mut Vec<Bubble>) -> usize{
+pub fn nester_rec(id: u32, bubble: & mut Vec<Bubble>) -> usize{
     let mut bubble_new = bubble.get(id as usize).unwrap();
     let mut  count: usize = 0;
     loop {

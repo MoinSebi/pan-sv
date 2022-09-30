@@ -6,7 +6,7 @@ mod panSV;
 
 use hashbrown::HashMap;
 use crate::core::counting::{CountNode};
-use crate::panSV::algo::{check_bubble_size, nest_version2, algo_panSV_multi, create_bubbles_stupid, merge_traversals, connect_bubbles_multi, indel_detection};
+use crate::panSV::algo::{check_bubble_size, nester_wrapper, algo_panSV_multi, create_bubbles_stupid, merge_traversals, connect_bubbles_multi, indel_detection};
 use crate::core::graph_helper::graph2pos;
 use clap::{Arg, App, AppSettings};
 use std::path::Path;
