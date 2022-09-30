@@ -98,7 +98,6 @@ fn main() {
     graph.from_file_direct2(graph_file);
 
     // Counting nodes
-    let bi_wrapper: HashMap<String, Vec<PanSVpos>>;
     let g2p = graph2pos(&graph);
 
 
@@ -116,7 +115,11 @@ fn main() {
         counts.counting_graph(&graph);
     }
     graph.nodes = HashMap::new();
+
+    let bi_wrapper: HashMap<String, Vec<PanSVpos>>;
     bi_wrapper = algo_panSV_multi(&graph.paths, counts, &threads);
+
+
     let mut bub_intervals: Vec<Posindex> = Vec::new();
     let mut bub_bubbles: Vec<Bubble> = Vec::new();
     let mut anchor2bubble: HashMap<(u32, u32), u32> = HashMap::new();

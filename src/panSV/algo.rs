@@ -2,7 +2,7 @@ use std::cmp::{max, min};
 use std::hash::Hash;
 use std::ops::Deref;
 use crate::core::counting::{CountNode};
-use crate::panSV::panSV_core::{PanSVpos, TmpPos, BubbleWrapper};
+use crate::panSV::panSV_core::{PanSVpos, TmpPos};
 use crate::core::core::{Posindex, Bubble, Traversal};
 use related_intervals::{make_nested, Network};
 use gfaR_wrapper::NPath;
@@ -268,7 +268,6 @@ pub fn add_new_bubbles(input: Vec<((u32, u32), Posindex, u32)>, f: &mut HashMap<
 /// 2. intervals = [from_index, to_index, acc_id]
 pub fn bw_index(input: HashMap<(u32, u32, u32), Vec<Posindex>>, id2id: &mut HashMap<(u32, u32, u32), u32>, intervals: &mut Vec<Posindex>) ->  Vec<((u32, u32, u32), Vec<(Posindex, u32)>)>{
     info!("BW INDEX");
-    let mut bw = BubbleWrapper::new();
     let mut res1 = Vec::new();
 
 
@@ -503,6 +502,8 @@ pub fn merge_bubbles(hm: HashMap<(u32, u32), Network>, result: &mut HashMap<u32,
     }
 }
 
+
+/// Add children and parents to bubble data structure
 pub fn in_bubbles(result: HashMap<u32, HashSet<u32>>, bw: &mut Vec<Bubble>){
     for (bub_id, hs) in result.into_iter(){
         for x in hs.into_iter() {
@@ -604,29 +605,30 @@ pub fn check_bubble_size(bubbles: &mut Vec<Bubble>){
 
 #[allow(dead_code)]
 /// Get the real nestedness
-pub fn nest_version2(h: & mut BubbleWrapper){
-    for x in 0..h.bubbles.len(){
-        let level = go1(x as u32, h) as u16;
-        let g = h.bubbles.get_mut(x).unwrap();
+pub fn nest_version2(bubbles: & mut Vec<Bubble>){
+    for x in 0..bubbles.len(){
+        let level = go1(x as u32, bubbles) as u16;
+        let g = bubbles.get_mut(x).unwrap();
         g.nestedness = level;
     }
 }
 
 #[allow(dead_code)]
 /// Function for nest_version2
-pub fn go1(id: u32, h: & mut BubbleWrapper) -> usize{
-    let mut bubble = h.bubbles.get(id as usize).unwrap();
+pub fn go1(id: u32, bubble: & mut Vec<Bubble>) -> usize{
+    let mut bubble_new = bubble.get(id as usize).unwrap();
     let mut  count: usize = 0;
     loop {
         count += 1;
-        if bubble.parents.len() == 0{
+        if bubble_new.parents.len() == 0{
             break
         }
-        eprintln!("parent {}", bubble.parents.len());
-        let parent = bubble.parents.iter().next().unwrap().clone();
-        eprintln!("parent2 {}", bubble.parents.len());
 
-        bubble = h.bubbles.get(parent as usize).unwrap();
+        eprintln!("parent {}", bubble_new.parents.len());
+        let parent = bubble_new.parents.iter().next().unwrap().clone();
+        eprintln!("parent2 {}", bubble_new.parents.len());
+
+        bubble_new = bubble.get(parent as usize).unwrap();
     }
      return count
 }

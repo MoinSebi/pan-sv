@@ -3,7 +3,6 @@ use std::fs::File;
 use std::io::{Write, BufWriter};
 use gfaR_wrapper::NPath;
 use hashbrown::HashMap;
-use crate::panSV::panSV_core::{BubbleWrapper};
 use crate::core::helper::{hashset2string};
 use crate::Posindex;
 
