@@ -128,6 +128,10 @@ fn main() {
     let mut anchor2bubble: HashMap<(u32, u32), u32> = HashMap::new();
     let mut id2id: HashMap<(u32, u32, u32), u32> = HashMap::new();
 
+    let mut parents: Vec<Vec<u32>> = Vec::new();
+    let mut children: Vec<Vec<u32>> = Vec::new();
+
+
 
     let tmp1 = create_bubbles_stupid(&bi_wrapper,  &mut id2id, &mut bub_intervals, &paths, &p2id, &threads);
     id2id.shrink_to_fit();
@@ -137,7 +141,7 @@ fn main() {
     //info!("{:?}", bub_wrapper);
     merge_traversals(tmp1, &paths, &mut bub_bubbles, &mut anchor2bubble, &threads);
     bub_bubbles.shrink_to_fit();
-    id2id = connect_bubbles_multi(bi_wrapper, &mut bub_bubbles, id2id,&p2id, &threads);
+    let (mut id2id, parents, children) = connect_bubbles_multi(bi_wrapper, &mut bub_bubbles, id2id,&p2id, &threads);
     let interval_numb = bub_intervals.len() as u32;
 
     indel_detection(&mut bub_bubbles, &anchor2bubble, &mut id2id, &mut bub_intervals, &paths, interval_numb);
@@ -156,7 +160,7 @@ fn main() {
 
 
     info!("Writing bubble stats");
-    bubble_naming_new(&bub_bubbles, outprefix);
+    bubble_naming_new(&bub_bubbles, children, parents, outprefix);
 
 
 

@@ -26,8 +26,6 @@ pub struct Bubble {
     pub start: u32,
     pub end: u32,
     pub id: u32,
-    pub children: HashSet<u32>,
-    pub parents: HashSet<u32>,
     pub traversals: Vec<Traversal>,
     // this is kinda panSV specific
     pub core: u32,
@@ -62,8 +60,6 @@ impl Bubble {
         Self {
             start: start,
             end: end,
-            children: u2,
-            parents: u3,
             id: i,
             traversals: rr,
             core: core,

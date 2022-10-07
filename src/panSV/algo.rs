@@ -39,8 +39,6 @@ pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: CountNode, threads: &usize) 
     let mut handles = Vec::new();
 
 
-
-
     // Iterate over packs of paths
     for chunk in chunks{
         let carc_results = arc_results.clone();
@@ -414,7 +412,7 @@ pub fn indel_detection(bubbles: &mut Vec<Bubble>, anchor2bubble: & HashMap<(u32,
 /// Wrapper for connecting bubbles multithreaded
 ///
 ///
-pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, bubbles: &mut Vec<Bubble>, id2id: HashMap<(u32, u32, u32), u32>, p2i: &HashMap<String, usize>, threads: &usize) -> HashMap<(u32, u32, u32), u32>{
+pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, bubbles: &mut Vec<Bubble>, id2id: HashMap<(u32, u32, u32), u32>, p2i: &HashMap<String, usize>, threads: &usize) -> (HashMap<(u32, u32, u32), u32>, Vec<Vec<u32>>, Vec<Vec<u32>>){
     info!("Connect bubbles");
 
     let ff = threads.clone();
@@ -472,17 +470,22 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, bubbles: &mut V
             send.send(vv).unwrap();
         });
     }
+    let mut gg: Vec<Vec<u32>> = vec![Vec::new(); bubbles.len()];
+    let mut gg2: Vec<Vec<u32>> = vec![Vec::new(); bubbles.len()];
+
 
     info!("Merge in bubble space");
     for x in 0..ff{
         for y in rev.recv().unwrap(){
-            in_bubbles(y, bubbles);
+            in_bubbles2(y, &mut gg, &mut gg2);
         }
     }
+    let f1 = clean_up(gg);
+    let f2 = clean_up(gg2);
 
     // get it back
     let id2id2 = Arc::try_unwrap(arc_id2id).unwrap();
-    id2id2
+    (id2id2, f1, f2)
 
 }
 
@@ -499,16 +502,36 @@ pub fn merge_bubbles(hm: HashMap<(u32, u32), Network>, result: &mut HashMap<u32,
     }
 }
 
-
 /// Add children and parents to bubble data structure
-pub fn in_bubbles(result: HashMap<u32, HashSet<u32>>, bw: &mut Vec<Bubble>){
+pub fn in_bubbles2(result: HashMap<u32, HashSet<u32>>, bw: &mut Vec<Vec<u32>>, bw2: &mut Vec<Vec<u32>>){
     for (bub_id, hs) in result.into_iter(){
         for x in hs.into_iter() {
-            bw.get_mut(x as usize).unwrap().children.insert(bub_id);
-            bw.get_mut(bub_id as usize).unwrap().parents.insert(x);
+            bw[x as usize].push(bub_id);
+            bw2[bub_id as usize].push(x);
+
         }
     }
 }
+
+pub fn clean_up(input: Vec<Vec<u32>>) -> Vec<Vec<u32>>{
+    let mut data: Vec<Vec<u32>> = Vec::new();
+    for x in input.into_iter(){
+        let f: HashSet<u32> = x.into_iter().collect();
+        let f2: Vec<u32> = f.into_iter().collect();
+        data.push(f2);
+    }
+    return data
+}
+
+// /// Add children and parents to bubble data structure
+// pub fn in_bubbles(result: HashMap<u32, HashSet<u32>>, bw: &mut Vec<Bubble>){
+//     for (bub_id, hs) in result.into_iter(){
+//         for x in hs.into_iter() {
+//             bw.get_mut(x as usize).unwrap().children.insert(bub_id);
+//             bw.get_mut(bub_id as usize).unwrap().parents.insert(x);
+//         }
+//     }
+// }
 
 /// Checking bubble size
 /// TODO
@@ -561,9 +584,9 @@ pub fn check_bubble_size(bubbles: &mut Vec<Bubble>){
 
 #[allow(dead_code)]
 /// Get the real nestedness
-pub fn nester_wrapper(bubbles: & mut Vec<Bubble>){
+pub fn nester_wrapper(bubbles: & mut Vec<Bubble>, par1: & Vec<Vec<u32>>){
     for x in 0..bubbles.len(){
-        let level = nester_rec(x as u32, bubbles) as u16;
+        let level = nester_rec(x as u32, bubbles, par1) as u16;
         let g = bubbles.get_mut(x).unwrap();
         g.nestedness = level;
     }
@@ -571,18 +594,16 @@ pub fn nester_wrapper(bubbles: & mut Vec<Bubble>){
 
 #[allow(dead_code)]
 /// Function for nest_version2
-pub fn nester_rec(id: u32, bubble: & mut Vec<Bubble>) -> usize{
+pub fn nester_rec(id: u32, bubble: & mut Vec<Bubble>, par1: & Vec<Vec<u32>>) -> usize{
     let mut bubble_new = bubble.get(id as usize).unwrap();
     let mut  count: usize = 0;
     loop {
         count += 1;
-        if bubble_new.parents.len() == 0{
+        if par1.get(bubble_new.id as usize).unwrap().len() == 0{
             break
         }
 
-        eprintln!("parent {}", bubble_new.parents.len());
-        let parent = bubble_new.parents.iter().next().unwrap().clone();
-        eprintln!("parent2 {}", bubble_new.parents.len());
+        let parent = par1.get(bubble_new.id as usize).unwrap().iter().next().unwrap().clone();
 
         bubble_new = bubble.get(parent as usize).unwrap();
     }

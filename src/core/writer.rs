@@ -1,6 +1,7 @@
 use crate::core::core::Bubble;
 use std::fs::File;
 use std::io::{Write, BufWriter};
+use std::os::unix::process::parent_id;
 use gfaR_wrapper::NPath;
 use hashbrown::HashMap;
 use crate::core::helper::{hashset2string};
@@ -10,7 +11,7 @@ use crate::Posindex;
 /// Read doc/bubble.stats
 /// - no complex naming (no recursion)
 /// - additional file for "parent ids"
-pub fn bubble_naming_new(hm1: & Vec<Bubble>, out: &str){
+pub fn bubble_naming_new(hm1: & Vec<Bubble>, child: Vec<Vec<u32>>, par1: Vec<Vec<u32>>, out: &str){
     let f = File::create([out, "bubble", "stats"].join(".")).expect("Unable to create file");
     let mut f = BufWriter::new(f);
     write!(f, "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
@@ -27,9 +28,9 @@ pub fn bubble_naming_new(hm1: & Vec<Bubble>, out: &str){
             "Ratio",
             "Small",
             "Type", ).expect("Can not write stats file");
-    for v in hm1.iter(){
+    for (i, v) in hm1.iter().enumerate(){
         let (max, min ,mean) = v.traversal_stats();
-        write!(f, "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\tCL:{}\tNL:{}\n", v.id, v.children.len(), min, max, mean, v.traversals.len(), v.number_interval(), hashset2string(&v.parents, ","), v.start, v.end, v.ratio, v.small, v.category, v.core, v.nestedness).expect("Not able to write bubble stats");
+        write!(f, "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\tCL:{}\tNL:{}\n", v.id, par1[i].len(), min, max, mean, v.traversals.len(), v.number_interval(), hashset2string(&par1[i], ","), v.start, v.end, v.ratio, v.small, v.category, v.core, v.nestedness).expect("Not able to write bubble stats");
     }
 }
 
@@ -38,12 +39,12 @@ pub fn bubble_naming_new(hm1: & Vec<Bubble>, out: &str){
 /// Naming bubble parent-child relationship
 ///
 /// Additional file nedded for new bubble naming
-pub fn bubble_parent_structure(hm1: & Vec<Bubble>, out: &str){
+pub fn bubble_parent_structure(hm1: & Vec<Bubble>, out: &str, par1: &Vec<Vec<u32>>){
     let f = File::create([out, "bubble", "txt"].join(".")).expect("Unable to create file");
     let mut f = BufWriter::new(f);
     write!(f, "bubble_id\tchildren_id\tparents_id\n").expect("Not able to write bubble nestedness file");
-    for v in hm1.iter(){
-        write!(f, "{}\t{:?}\t{:?}\n", v.id, v.children, v.parents).expect("Not able to write bubble nestedness file");
+    for (i,v) in hm1.iter().enumerate(){
+        write!(f, "{}\t{:?}\t{:?}\n", v.id, par1.get(i).unwrap(), par1.get(i).unwrap()).expect("Not able to write bubble nestedness file");
     }
 }
 

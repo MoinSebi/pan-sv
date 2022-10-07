@@ -10,7 +10,7 @@ pub fn vec2string(input: &Vec<u32>, sep:  &str) -> String{
 
 /// HashSet to String
 /// This is not always in the same order
-pub fn hashset2string(input: &HashSet<u32>, sep:  &str) -> String{
+pub fn hashset2string(input: &Vec<u32>, sep:  &str) -> String{
     let j:Vec<String> = input.iter().map(|i| i.to_string()).collect();
     j.join(sep)
 }
