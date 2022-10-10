@@ -415,7 +415,7 @@ pub fn indel_detection(bubbles: &mut Vec<Bubble>, anchor2bubble: & HashMap<(u32,
 pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, bubbles: &mut Vec<Bubble>, id2id: HashMap<(u32, u32, u32), u32>, p2i: &HashMap<String, usize>, threads: &usize) -> (HashMap<(u32, u32, u32), u32>, Vec<Vec<u32>>, Vec<Vec<u32>>){
     info!("Connect bubbles");
 
-    let ff = threads.clone();
+    let ff = hm.len().clone();
     let mut g: Vec<(String, Vec<PanSVpos>)> = hm.into_iter().map(|s| s).collect();
     g.shrink_to_fit();
 
@@ -449,9 +449,10 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, bubbles: &mut V
 
         thread::spawn(move || {
             //let mut gg = vec![];
-            let mut vv =  vec![];
             let mut c = 0;
             for (k,v) in chunk.into_iter(){
+                let mut vv =  vec![];
+
                 let start_end = v.into_iter().map(|s| (s.start, s.end)).collect();
                 let mut network = related_intervals::create_network_hashmap(&start_end);
 
@@ -466,8 +467,8 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, bubbles: &mut V
                 let mut rr = HashMap::new();
                 merge_bubbles(network, & mut rr, &card_id2id, &path2index_var);
                 vv.push(rr);
+                send.send(vv).unwrap();
             }
-            send.send(vv).unwrap();
         });
     }
     let mut gg: Vec<Vec<u32>> = vec![Vec::new(); bubbles.len()];
@@ -485,6 +486,7 @@ pub fn connect_bubbles_multi(hm: HashMap<String, Vec<PanSVpos>>, bubbles: &mut V
 
     // get it back
     let id2id2 = Arc::try_unwrap(arc_id2id).unwrap();
+
     (id2id2, f1, f2)
 
 }

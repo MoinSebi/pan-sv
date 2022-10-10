@@ -19,7 +19,7 @@ fn file_does_exist() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("pan-sv")?;
     cmd
         .arg("--gfa")
-        .arg("/home/svorbrugg_local/Rust/gSV/example_data/testGraph.gfa");
+        .arg("/home/svorbrugg_local/Rust/pan-sv/data/testGraph.gfa");
     cmd.assert().success();
     Ok(())
 }
