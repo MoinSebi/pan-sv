@@ -3,13 +3,14 @@ use hashbrown::HashMap;
 
 
 #[derive(Debug, Clone)]
+/// Same as PosIndex but with core instead of accession
 pub struct PanSVpos {
     pub start:  u32,
     pub end:  u32,
     pub core: u32,
 }
 
-/// For interval_open ->
+/// To construct the PanSVpos
 pub struct TmpPos {
     pub acc:  String,
     pub start:  u32,
