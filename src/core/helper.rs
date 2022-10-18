@@ -1,11 +1,5 @@
 use std::collections::HashSet;
 
-#[allow(dead_code)]
-/// Vector to String
-pub fn vec2string(input: &Vec<u32>, sep:  &str) -> String{
-    let j:Vec<String> = input.iter().map(|i| i.to_string()).collect();
-    j.join(sep)
-}
 
 
 /// HashSet to String

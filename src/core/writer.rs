@@ -35,18 +35,6 @@ pub fn bubble_naming_new(hm1: & Vec<Bubble>, child: Vec<Vec<u32>>, par1: Vec<Vec
 }
 
 
-#[allow(dead_code)]
-/// Naming bubble parent-child relationship
-///
-/// Additional file nedded for new bubble naming
-pub fn bubble_parent_structure(hm1: & Vec<Bubble>, out: &str, par1: &Vec<Vec<u32>>){
-    let f = File::create([out, "bubble", "txt"].join(".")).expect("Unable to create file");
-    let mut f = BufWriter::new(f);
-    write!(f, "bubble_id\tchildren_id\tparents_id\n").expect("Not able to write bubble nestedness file");
-    for (i,v) in hm1.iter().enumerate(){
-        write!(f, "{}\t{:?}\t{:?}\n", v.id, par1.get(i).unwrap(), par1.get(i).unwrap()).expect("Not able to write bubble nestedness file");
-    }
-}
 
 
 /// Writing bed file

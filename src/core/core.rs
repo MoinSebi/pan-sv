@@ -97,17 +97,6 @@ impl Bubble {
         number
     }
 
-    #[allow(dead_code)]
-    /// Number of different accessions
-    pub fn number_acc(&self, hm: &HashMap<u32, Posindex>) -> usize{
-        let mut accession_numb= HashSet::new();
-        for v in self.traversals.iter(){
-            for x in v.pos.iter(){
-                accession_numb.insert(hm.get(x).unwrap().acc.clone());
-            }
-        }
-        accession_numb.len()
-    }
 
 }
 
