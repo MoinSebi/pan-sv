@@ -121,7 +121,7 @@ fn main() {
 
     let bi_wrapper: HashMap<String, Vec<PanSVpos>>;
     let mut f = algo_panSV_multi2(&paths, counts,  &threads, &p2id);
-    let f2 = new_bubble(&mut f);
+    let f2 = new_bubble(&mut f, &paths);
     //
     //
     // let mut bub_intervals: Vec<Posindex> = Vec::new();

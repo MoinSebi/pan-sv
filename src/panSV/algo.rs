@@ -146,7 +146,7 @@ pub fn algo_panSV_multi2(paths: &Vec<NPath>, counts: CountNode, threads: &usize,
     result_result
 }
 
-pub fn new_bubble(d1:&mut Vec<(usize, u32, u32, u32, u32, u32)>){
+pub fn new_bubble(d1:&mut Vec<(usize, u32, u32, u32, u32, u32)>, paths: &Vec<NPath>){
     d1.sort_by_key(|a| (a.4, a.5));
     println!("{:?}", d1);
 
@@ -170,6 +170,58 @@ pub fn new_bubble(d1:&mut Vec<(usize, u32, u32, u32, u32, u32)>){
     }
     println!("{:?}", bubbles);
     println!("{:?}", intervals);
+    intervals.append(&mut indel_detection2(gg, paths));
+    println!("{:?}", intervals);
+    let dd = split_1(&mut intervals);
+    let cc = chunk_by_index(intervals, dd);
+
+}
+
+pub fn indel_detection2(anchor2bubble: HashMap<(u32, u32), u32>, paths: &Vec<NPath>) -> Vec<(usize, u32, u32, u32)>{
+    info!("InDel detection");
+
+    let mut f2 = Vec::new();
+    for (i, path) in paths.iter().enumerate(){
+        for x in 0..path.nodes.len()-1{
+            let m1 = path.nodes[x];
+            let m2 = path.nodes[x+1];
+            let ind: (u32, u32) = (min(m1, m2 ), max(m1, m2));
+            if anchor2bubble.contains_key(&ind){
+                f2.push((i, x as u32 , (x+1) as u32, anchor2bubble.get(&ind).unwrap().clone()));
+            }
+        }
+    }
+    println!("{:?}", f2);
+    return f2
+}
+
+
+pub fn split_1(d1: &mut Vec<(usize, u32, u32, u32)>) -> Vec<usize>{
+    d1.sort_by_key(|a| (a.0));
+    println!("LOL {:?}", d1);
+
+    let mut d = Vec::new();
+    let mut s = 0;
+    for x in d1.into_iter().enumerate(){
+        if x.1.0 != s {
+            d.push(x.0);
+            s = x.1.0;
+        }
+    }
+    d.push(d1.len());
+    println!("LOL {:?}", d);
+    d
+}
+
+pub fn chunk_by_index(d1: Vec<(usize, u32, u32, u32)>, d: Vec<usize>) {
+    let mut f = vec![];
+    let mut old = 0;
+    for x in d.iter(){
+        f.push(d1[old..*x].to_vec());
+        old = *x;
+    }
+    println!("{:?}", f);
+
 
 }
 
