@@ -6,7 +6,7 @@ mod panSV;
 
 use hashbrown::HashMap;
 use crate::core::counting::{CountNode};
-use crate::panSV::algo::{check_bubble_size, nester_wrapper, algo_panSV_multi, create_bubbles_stupid, merge_traversals, connect_bubbles_multi, indel_detection};
+use crate::panSV::algo::{check_bubble_size, nester_wrapper, create_bubbles_stupid, merge_traversals, connect_bubbles_multi, indel_detection, algo_panSV_multi2};
 use crate::core::graph_helper::graph2pos;
 use clap::{Arg, App, AppSettings};
 use std::path::Path;
@@ -120,47 +120,47 @@ fn main() {
 
 
     let bi_wrapper: HashMap<String, Vec<PanSVpos>>;
-    bi_wrapper = algo_panSV_multi(&paths, counts, &threads);
-
-
-    let mut bub_intervals: Vec<Posindex> = Vec::new();
-    let mut bub_bubbles: Vec<Bubble> = Vec::new();
-    let mut anchor2bubble: HashMap<(u32, u32), u32> = HashMap::new();
-    let mut id2id: HashMap<(u32, u32, u32), u32> = HashMap::new();
-
-    let mut parents: Vec<Vec<u32>> = Vec::new();
-    let mut children: Vec<Vec<u32>> = Vec::new();
-
-
-
-    let tmp1 = create_bubbles_stupid(&bi_wrapper,  &mut id2id, &mut bub_intervals, &paths, &p2id, &threads);
-    id2id.shrink_to_fit();
-    bub_intervals.shrink_to_fit();
-
-
-    //info!("{:?}", bub_wrapper);
-    merge_traversals(tmp1, &paths, &mut bub_bubbles, &mut anchor2bubble, &threads);
-    bub_bubbles.shrink_to_fit();
-    let (mut id2id, parents, children) = connect_bubbles_multi(bi_wrapper, &mut bub_bubbles, id2id,&p2id, &threads);
-    let interval_numb = bub_intervals.len() as u32;
-
-    indel_detection(&mut bub_bubbles, &anchor2bubble, &mut id2id, &mut bub_intervals, &paths, interval_numb);
-
-
-    info!("Write Traversal");
-    writing_bed_solot(& mut bub_bubbles, & bub_intervals, &g2p, &paths, outprefix);
-
-    info!("Categorize bubbles");
-    check_bubble_size(&mut bub_bubbles);
-
-    // if matches.is_present("Nestedness"){
-    //     info!("Nestedness");
-    //     nest_version2(& mut bub_wrapper);
-    // }
-
-
-    info!("Writing bubble stats");
-    bubble_naming_new(&bub_bubbles, children, parents, outprefix);
+    let f = algo_panSV_multi2(&paths, counts,  &threads, &p2id);
+    //
+    //
+    // let mut bub_intervals: Vec<Posindex> = Vec::new();
+    // let mut bub_bubbles: Vec<Bubble> = Vec::new();
+    // let mut anchor2bubble: HashMap<(u32, u32), u32> = HashMap::new();
+    // let mut id2id: HashMap<(u32, u32, u32), u32> = HashMap::new();
+    //
+    // let mut parents: Vec<Vec<u32>> = Vec::new();
+    // let mut children: Vec<Vec<u32>> = Vec::new();
+    //
+    //
+    //
+    // let tmp1 = create_bubbles_stupid(&bi_wrapper,  &mut id2id, &mut bub_intervals, &paths, &p2id, &threads);
+    // id2id.shrink_to_fit();
+    // bub_intervals.shrink_to_fit();
+    //
+    //
+    // //info!("{:?}", bub_wrapper);
+    // merge_traversals(tmp1, &paths, &mut bub_bubbles, &mut anchor2bubble, &threads);
+    // bub_bubbles.shrink_to_fit();
+    // let (mut id2id, parents, children) = connect_bubbles_multi(bi_wrapper, &mut bub_bubbles, id2id,&p2id, &threads);
+    // let interval_numb = bub_intervals.len() as u32;
+    //
+    // indel_detection(&mut bub_bubbles, &anchor2bubble, &mut id2id, &mut bub_intervals, &paths, interval_numb);
+    //
+    //
+    // info!("Write Traversal");
+    // writing_bed_solot(& mut bub_bubbles, & bub_intervals, &g2p, &paths, outprefix);
+    //
+    // info!("Categorize bubbles");
+    // check_bubble_size(&mut bub_bubbles);
+    //
+    // // if matches.is_present("Nestedness"){
+    // //     info!("Nestedness");
+    // //     nest_version2(& mut bub_wrapper);
+    // // }
+    //
+    //
+    // info!("Writing bubble stats");
+    // bubble_naming_new(&bub_bubbles, children, parents, outprefix);
 
 
 

@@ -13,6 +13,8 @@ use crossbeam_channel::unbounded;
 use hashbrown::{HashMap, HashSet};
 use log::{debug, info};
 
+
+
 /// Detect start and end position of bubbles
 ///
 /// Idea:
@@ -20,15 +22,16 @@ use log::{debug, info};
 /// 2. Save start, end position (index) + core level of bubbles
 /// 3. Save the structure in a HashMap
 ///
-pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: CountNode, threads: &usize) -> HashMap<String, Vec<PanSVpos>>{
+pub fn algo_panSV_multi2(paths: &Vec<NPath>, counts: CountNode, threads: &usize, path2index: &HashMap<String, usize>) -> Vec<(usize, u32, u32, u32, u32, u32)>{
     info!("Running pan-sv algorithm");
 
 
 
 
     let chunks = chunk_inplace(paths.clone(), threads.clone());
-    let arc_results = Arc::new(Mutex::new(HashMap::new()));
+    let arc_results = Arc::new(Mutex::new(Vec::new()));
     let arc_counts = Arc::new(counts);
+    let arc_cc = Arc::new(path2index.clone());
 
 
     // Indexing
@@ -43,6 +46,7 @@ pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: CountNode, threads: &usize) 
     for chunk in chunks{
         let carc_results = arc_results.clone();
         let carc_counts = arc_counts.clone();
+        let carc_cc = arc_cc.clone();
 
         let carc_genome_count = genome_count.clone();
         let carc_total_len = total_len.clone();
@@ -50,14 +54,14 @@ pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: CountNode, threads: &usize) 
         let handle = thread::spawn(move || {
 
             let mut lastcore: u32;
-            let mut result_panSV: HashMap<String, Vec<PanSVpos>> = HashMap::new();
-            for x in chunk.iter(){
-                let ki: Vec<_> = Vec::new();
-                result_panSV.insert(x.name.to_owned().clone(), ki);
-            }
+            let mut result_panSV = Vec::new();
+            let mut index1;
+
             for x in chunk{
                 //max_index.insert(x.name.clone(), x.nodes.len()-1);
                 lastcore = 1;
+                index1 = carc_cc.get(&x.name).unwrap().clone();
+
 
                 // All "open" intervals
                 let mut interval_open:  Vec<TmpPos> = Vec::new();
@@ -67,7 +71,7 @@ pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: CountNode, threads: &usize) 
 
                     // if core is smaller than before -> open new bubble
                     if carc_counts.ncount[node] < lastcore {
-                        interval_open.push(TmpPos { acc: x.name.clone(), start: (index - 1) as u32, core: lastcore});
+                        interval_open.push(TmpPos { acc: x.name.clone(), start: (index - 1) as u32, core: lastcore, node1: node.clone()});
 
                     }
                     // If bigger -> close bubble
@@ -93,7 +97,7 @@ pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: CountNode, threads: &usize) 
                             if o_trans.core <= carc_counts.ncount[node] {
                                 // why this?
                                 if index != 0 {
-                                    result_panSV.get_mut(&o_trans.acc).unwrap().push(PanSVpos {start: o_trans.start, end: index as u32, core: o_trans.core});
+                                    result_panSV.push((index1, interval_open[interval_open.len() - 1].start, index as u32, lastcore, node.clone(), interval_open[interval_open.len() - 1].node1));
 
                                 }
                                 remove_list.push(index_open);
@@ -107,7 +111,7 @@ pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: CountNode, threads: &usize) 
                         // If there is not a open interval which has the same core level -> this still exists
                         if !trig {
                             //println!("BIG HIT");
-                            result_panSV.get_mut(&x.name).unwrap().push(PanSVpos {start: interval_open[interval_open.len() - 1].start, end: index as u32, core: lastcore});
+                            result_panSV.push((index1, interval_open[interval_open.len() - 1].start, index as u32, lastcore, node.clone(), interval_open[interval_open.len() - 1].node1));
                         }
 
                     }
@@ -117,12 +121,12 @@ pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: CountNode, threads: &usize) 
                 let mut imut = carc_genome_count.lock().unwrap();
                 *imut = *imut + 1;
                 debug!("({}/{}) {}", imut, carc_total_len, x.name );
-                result_panSV.get_mut(&x.name).unwrap().shrink_to_fit();
+                result_panSV.shrink_to_fit();
             }
 
             let mut u = carc_results.lock().unwrap();
-            for (key, value) in result_panSV {
-                u.insert(key, value);
+            for value in result_panSV {
+                u.push(value);
             };
 
         });
@@ -134,9 +138,137 @@ pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: CountNode, threads: &usize) 
     }
 
 
-    let result_result = sort_trav(Arc::try_unwrap(arc_results).unwrap().into_inner().unwrap(), threads);
+    let result_result = Arc::try_unwrap(arc_results).unwrap().into_inner().unwrap();
     result_result
 }
+
+
+
+
+/// Detect start and end position of bubbles
+///
+/// Idea:
+/// 1. Iterate over each path
+/// 2. Save start, end position (index) + core level of bubbles
+/// 3. Save the structure in a HashMap
+///
+// pub fn algo_panSV_multi(paths: &Vec<NPath>, counts: CountNode, threads: &usize) -> HashMap<String, Vec<PanSVpos>>{
+//     info!("Running pan-sv algorithm");
+//
+//
+//
+//
+//     let chunks = chunk_inplace(paths.clone(), threads.clone());
+//     let arc_results = Arc::new(Mutex::new(HashMap::new()));
+//     let arc_counts = Arc::new(counts);
+//
+//
+//     // Indexing
+//     let total_len = Arc::new(paths.len());
+//     let genome_count = Arc::new(Mutex::new(0));
+//
+//     // Handles
+//     let mut handles = Vec::new();
+//
+//
+//     // Iterate over packs of paths
+//     for chunk in chunks{
+//         let carc_results = arc_results.clone();
+//         let carc_counts = arc_counts.clone();
+//
+//         let carc_genome_count = genome_count.clone();
+//         let carc_total_len = total_len.clone();
+//
+//         let handle = thread::spawn(move || {
+//
+//             let mut lastcore: u32;
+//             let mut result_panSV: HashMap<String, Vec<PanSVpos>> = HashMap::new();
+//             for x in chunk.iter(){
+//                 let ki: Vec<_> = Vec::new();
+//                 result_panSV.insert(x.name.to_owned().clone(), ki);
+//             }
+//             for x in chunk{
+//                 //max_index.insert(x.name.clone(), x.nodes.len()-1);
+//                 lastcore = 1;
+//
+//                 // All "open" intervals
+//                 let mut interval_open:  Vec<TmpPos> = Vec::new();
+//
+//                 // Iterate over all nodes
+//                 for (index, node) in x.nodes.iter().enumerate() {
+//
+//                     // if core is smaller than before -> open new bubble
+//                     if carc_counts.ncount[node] < lastcore {
+//                         interval_open.push(TmpPos { acc: x.name.clone(), start: (index - 1) as u32, core: lastcore});
+//
+//                     }
+//                     // If bigger -> close bubble
+//                     else if (carc_counts.ncount[node] > lastcore) & (interval_open.len() > 0) {
+//                         lastcore = carc_counts.ncount[node];
+//
+//                         // There is no bubble opened with this core level
+//                         let mut trig = false;
+//
+//                         // List which open trans are removed later
+//                         let mut remove_list: Vec<usize> = Vec::new();
+//
+//
+//                         // We iterate over all open bubbles
+//                         for (index_open, o_trans) in interval_open.iter().enumerate() {
+//                             // Check if we find the same core level
+//                             if (o_trans.core == carc_counts.ncount[node]) | (interval_open[interval_open.len() - 1].core < carc_counts.ncount[node]){
+//                                 trig = true;
+//                             }
+//
+//
+//                             // If one open_interval has smaller (or same) core level -> close
+//                             if o_trans.core <= carc_counts.ncount[node] {
+//                                 // why this?
+//                                 if index != 0 {
+//                                     result_panSV.get_mut(&o_trans.acc).unwrap().push(PanSVpos {start: o_trans.start, end: index as u32, core: o_trans.core});
+//
+//                                 }
+//                                 remove_list.push(index_open);
+//                             }
+//                         }
+//                         // Remove stuff from the interval_open list
+//                         for (index_r, index_remove) in remove_list.iter().enumerate() {
+//                             interval_open.remove(*index_remove - index_r);
+//                         }
+//
+//                         // If there is not a open interval which has the same core level -> this still exists
+//                         if !trig {
+//                             //println!("BIG HIT");
+//                             result_panSV.get_mut(&x.name).unwrap().push(PanSVpos {start: interval_open[interval_open.len() - 1].start, end: index as u32, core: lastcore});
+//                         }
+//
+//                     }
+//                     lastcore = carc_counts.ncount[node];
+//
+//                 }
+//                 let mut imut = carc_genome_count.lock().unwrap();
+//                 *imut = *imut + 1;
+//                 debug!("({}/{}) {}", imut, carc_total_len, x.name );
+//                 result_panSV.get_mut(&x.name).unwrap().shrink_to_fit();
+//             }
+//
+//             let mut u = carc_results.lock().unwrap();
+//             for (key, value) in result_panSV {
+//                 u.insert(key, value);
+//             };
+//
+//         });
+//         handles.push(handle);
+//     }
+//     for handle in handles {
+//         handle.join().unwrap()
+//
+//     }
+//
+//
+//     let result_result = sort_trav(Arc::try_unwrap(arc_results).unwrap().into_inner().unwrap(), threads);
+//     result_result
+// }
 
 /// Sort the pansv vector
 ///

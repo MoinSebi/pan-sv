@@ -15,4 +15,5 @@ pub struct TmpPos {
     pub acc:  String,
     pub start:  u32,
     pub core:  u32,
+    pub node1: u32,
 }
