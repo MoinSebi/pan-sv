@@ -146,7 +146,7 @@ pub fn algo_panSV_multi2(paths: &Vec<NPath>, counts: CountNode, threads: &usize,
 
 pub fn new_bubble(d1:&mut Vec<(usize, u32, u32, u32, u32, u32)>, paths: &Vec<NPath>, jo: &HashMap<String, Vec<usize>>) -> (Vec<(usize, u32, u32, u32)>, Vec<(u32, u32, u32)>){
     d1.sort_by_key(|a| (a.4, a.5));
-    println!("new bubbles");
+    info!("new bubbles");
 
     let mut bubbles = Vec::new();
     let mut intervals = Vec::new();
@@ -226,6 +226,7 @@ pub fn chunk_by_index(d1: Vec<(usize, u32, u32, u32)>, d: Vec<usize>) -> Vec<Vec
 }
 
 pub fn check_parent(mut intervals: Vec<(usize, u32, u32, u32)>) -> (Vec<(usize, u32, u32, u32)>, HashMap<u32, HashSet<u32>>){
+    println!("check parent");
     let dd = split_1(&mut intervals);
     let mut cc = chunk_by_index(intervals, dd);
     let mut rr = HashMap::new();
@@ -260,6 +261,7 @@ pub fn fn2(nw: HashMap<(u32, u32), Network>, lol: &mut HashMap<u32, HashSet<u32>
 
 
 pub fn makesize(d1: &mut Vec<(usize, u32, u32, u32)>, index2: & hashbrown::HashMap<String, Vec<usize>>, paths: &Vec<NPath>) -> Vec<u32>{
+    info!("make size");
     d1.sort_by_key(|a| (a.0));
     let mut sizze = Vec::new();
     let dd = split_1(d1);
@@ -277,6 +279,64 @@ pub fn makesize(d1: &mut Vec<(usize, u32, u32, u32)>, index2: & hashbrown::HashM
 
     }
     return sizze
+
+}
+
+pub fn output1(mut data: Vec<(usize, u32, u32, u32)>, sizzes: Vec<u32>, paths: &Vec<NPath>){
+    info!("jesus maria");
+    data.sort_by_key(|a| (a.3));
+    let mut old_bub = 1;
+    let mut small = u32::MAX;
+    let mut big = 0;
+    //let mut g = Vec::new();
+    let mut count = 0;
+    let mut ss:  Vec<Vec<(u32, bool)>> = Vec::new();
+
+
+    let mut test = Vec::new();
+    let mut this = 0;
+
+    let mut bub_stats = Vec::new();
+    for (x, s) in data.into_iter().zip(sizzes){
+        if x.3 != old_bub{
+            bub_stats.push((small, big, ss.len(), count));
+
+
+
+            //new stuff
+            small = u32::MAX;
+            big = 0;
+            old_bub = x.3;
+            ss = Vec::new();
+            this = 0;
+            count = 0;
+        }
+        small = min(small, s);
+        big = max(big, s);
+
+        let p = &paths[x.0];
+        let k: Vec<u32> = p.nodes[(x.1 + 1) as usize..x.2 as usize].iter().cloned().collect();
+        let k2: Vec<bool> = p.dir[(x.1 + 1) as usize..x.2 as usize].iter().cloned().collect();
+       // let mut k10 = Vec::new();
+        let k10: Vec<(u32, bool)> = k.iter().zip(k2,).map(|(x,y)| (*x,y)).collect();
+        // for x in 0..k.len() {
+        //     k10.push((k[x], k2[x]));
+        // }
+
+
+        if ss.contains(&k10) {
+             this = ss.iter().position(|r| *r == k10).unwrap();
+        } else {
+            ss.push(k10);
+            this += 1;
+        }
+
+        test.push(this);
+        count += 1;
+
+
+    }
+    bub_stats.push((small, big, ss.len(), count));
 
 }
 
