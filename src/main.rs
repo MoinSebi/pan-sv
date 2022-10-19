@@ -6,7 +6,7 @@ mod panSV;
 
 use hashbrown::HashMap;
 use crate::core::counting::{CountNode};
-use crate::panSV::algo::{check_bubble_size, nester_wrapper, create_bubbles_stupid, merge_traversals, connect_bubbles_multi, indel_detection, algo_panSV_multi2, new_bubble};
+use crate::panSV::algo::{check_bubble_size, nester_wrapper, create_bubbles_stupid, merge_traversals, connect_bubbles_multi, indel_detection, algo_panSV_multi2, new_bubble, check_parent, makesize};
 use crate::core::graph_helper::graph2pos;
 use clap::{Arg, App, AppSettings};
 use std::path::Path;
@@ -120,8 +120,10 @@ fn main() {
 
 
     let bi_wrapper: HashMap<String, Vec<PanSVpos>>;
-    let mut f = algo_panSV_multi2(&paths, counts,  &threads, &p2id);
-    let f2 = new_bubble(&mut f, &paths);
+    let mut pre_intervals = algo_panSV_multi2(&paths, counts,  &threads, &p2id);
+    let (mut intervals, mut bubbles) = new_bubble(&mut pre_intervals, &paths, &g2p);
+    let (mut intervals2, mut rela) = check_parent(intervals);
+    let sizes = makesize(&mut intervals2, &g2p, &paths);
     //
     //
     // let mut bub_intervals: Vec<Posindex> = Vec::new();

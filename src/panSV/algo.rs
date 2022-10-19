@@ -63,6 +63,7 @@ pub fn algo_panSV_multi2(paths: &Vec<NPath>, counts: CountNode, threads: &usize,
                 lastcore = 1;
                 lastnode = 1;
                 index1 = carc_cc.get(&x.name).unwrap().clone();
+                println!("{}",x.name);
 
 
                 // All "open" intervals
@@ -74,9 +75,9 @@ pub fn algo_panSV_multi2(paths: &Vec<NPath>, counts: CountNode, threads: &usize,
                     // if core is smaller than before -> open new bubble
                     if carc_counts.ncount[node] < lastcore {
                         interval_open.push(TmpPos { acc: x.name.clone(), start: (index - 1) as u32, core: lastcore, node1: lastnode});
-
                     }
                     // If bigger -> close bubble
+
                     else if (carc_counts.ncount[node] > lastcore) & (interval_open.len() > 0) {
                         lastcore = carc_counts.ncount[node];
 
@@ -99,10 +100,7 @@ pub fn algo_panSV_multi2(paths: &Vec<NPath>, counts: CountNode, threads: &usize,
                             // If one open_interval has smaller (or same) core level -> close
                             if o_trans.core <= carc_counts.ncount[node] {
                                 // why this?
-                                if index != 0 {
-                                    result_panSV.push((index1, interval_open[interval_open.len() - 1].start, index as u32, lastcore, interval_open[interval_open.len() - 1].node1, node.clone()));
-
-                                }
+                                result_panSV.push((index1, o_trans.start, index as u32, o_trans.core, o_trans.node1, node.clone()));
                                 remove_list.push(index_open);
                             }
                         }
@@ -146,9 +144,9 @@ pub fn algo_panSV_multi2(paths: &Vec<NPath>, counts: CountNode, threads: &usize,
     result_result
 }
 
-pub fn new_bubble(d1:&mut Vec<(usize, u32, u32, u32, u32, u32)>, paths: &Vec<NPath>){
+pub fn new_bubble(d1:&mut Vec<(usize, u32, u32, u32, u32, u32)>, paths: &Vec<NPath>, jo: &HashMap<String, Vec<usize>>) -> (Vec<(usize, u32, u32, u32)>, Vec<(u32, u32, u32)>){
     d1.sort_by_key(|a| (a.4, a.5));
-    println!("{:?}", d1);
+    println!("new bubbles");
 
     let mut bubbles = Vec::new();
     let mut intervals = Vec::new();
@@ -159,8 +157,8 @@ pub fn new_bubble(d1:&mut Vec<(usize, u32, u32, u32, u32, u32)>, paths: &Vec<NPa
 
     for x in d1.into_iter(){
         if (x.4 != f) | (x.5 != f2){
-            bubbles.push((x.4, x.5, x.3));
             count += 1;
+            bubbles.push((x.4, x.5, x.3));
             gg.insert((x.4, x.5), count);
             f = x.4;
             f2 = x.5;
@@ -168,17 +166,21 @@ pub fn new_bubble(d1:&mut Vec<(usize, u32, u32, u32, u32, u32)>, paths: &Vec<NPa
         intervals.push((x.0, x.1, x.2, count));
 
     }
-    println!("{:?}", bubbles);
-    println!("{:?}", intervals);
-    intervals.append(&mut indel_detection2(gg, paths));
-    println!("{:?}", intervals);
-    let dd = split_1(&mut intervals);
-    let cc = chunk_by_index(intervals, dd);
+    intervals.extend( indel_detection2(gg, paths));
+    return (intervals, bubbles)
 
 }
 
+pub fn merge_back(d1: Vec<Vec<(usize, u32, u32, u32)>>) -> Vec<(usize, u32, u32, u32)>{
+    let mut d = Vec::new();
+    for x in d1.into_iter(){
+        d.extend(x);
+    }
+    return d
+}
+
 pub fn indel_detection2(anchor2bubble: HashMap<(u32, u32), u32>, paths: &Vec<NPath>) -> Vec<(usize, u32, u32, u32)>{
-    info!("InDel detection");
+    info!("InDel detection2");
 
     let mut f2 = Vec::new();
     for (i, path) in paths.iter().enumerate(){
@@ -191,14 +193,13 @@ pub fn indel_detection2(anchor2bubble: HashMap<(u32, u32), u32>, paths: &Vec<NPa
             }
         }
     }
-    println!("{:?}", f2);
     return f2
 }
 
+use std::cmp::Reverse;
 
 pub fn split_1(d1: &mut Vec<(usize, u32, u32, u32)>) -> Vec<usize>{
-    d1.sort_by_key(|a| (a.0));
-    println!("LOL {:?}", d1);
+    d1.sort_by_key(|a| (a.0, a.1, Reverse(a.2)));
 
     let mut d = Vec::new();
     let mut s = 0;
@@ -209,22 +210,75 @@ pub fn split_1(d1: &mut Vec<(usize, u32, u32, u32)>) -> Vec<usize>{
         }
     }
     d.push(d1.len());
-    println!("LOL {:?}", d);
     d
 }
 
-pub fn chunk_by_index(d1: Vec<(usize, u32, u32, u32)>, d: Vec<usize>) {
+pub fn chunk_by_index(d1: Vec<(usize, u32, u32, u32)>, d: Vec<usize>) -> Vec<Vec<(usize, u32, u32, u32)>>{
     let mut f = vec![];
     let mut old = 0;
     for x in d.iter(){
         f.push(d1[old..*x].to_vec());
         old = *x;
     }
-    println!("{:?}", f);
+    f
 
 
 }
 
+pub fn check_parent(mut intervals: Vec<(usize, u32, u32, u32)>) -> (Vec<(usize, u32, u32, u32)>, HashMap<u32, HashSet<u32>>){
+    let dd = split_1(&mut intervals);
+    let mut cc = chunk_by_index(intervals, dd);
+    let mut rr = HashMap::new();
+    for x in cc.iter(){
+        let mut dd = HashMap::new();
+        for y in x.iter(){
+            dd.insert((y.1, y.2), y.3);
+        }
+        let start_end = x.into_iter().map(|s| (s.1, s.2)).collect();
+        let mut network = related_intervals::create_network_hashmap(&start_end);
+
+        make_nested(&start_end, & mut network);
+        fn2(network, & mut rr, &dd);
+    }
+    let mut oo = merge_back(cc);
+    return (oo, rr)
+
+
+}
+
+pub fn fn2(nw: HashMap<(u32, u32), Network>, lol: &mut HashMap<u32, HashSet<u32>>, dd: &HashMap<(u32, u32), u32> ){
+
+    for (k,v) in nw.into_iter() {
+        let d = (k.0, k.1);
+        let bub_id = dd.get(&d).unwrap();
+        for x in v.parent.into_iter() {
+            let id = dd.get(&(x.0, x.1)).unwrap().clone();
+            lol.entry(*bub_id).and_modify(|e| { e.insert(id); }).or_insert(HashSet::from([id]));
+        }
+    }
+}
+
+
+pub fn makesize(d1: &mut Vec<(usize, u32, u32, u32)>, index2: & hashbrown::HashMap<String, Vec<usize>>, paths: &Vec<NPath>) -> Vec<u32>{
+    d1.sort_by_key(|a| (a.0));
+    let mut sizze = Vec::new();
+    let dd = split_1(d1);
+    let mut cc = chunk_by_index(d1.clone(), dd);
+    for x in cc.iter(){
+        for y in x.iter(){
+            let from_id: usize = index2.get(&paths[y.0].name).unwrap()[y.1 as usize];
+            let mut to_id: usize = index2.get(&paths[y.0].name).unwrap()[y.2 as usize - 1];
+            if y.1 == y.2 + 1 {
+                to_id = from_id.clone();
+            }
+            sizze.push((to_id - from_id) as u32);
+        }
+
+
+    }
+    return sizze
+
+}
 
 
 

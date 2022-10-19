@@ -10,6 +10,7 @@ pub struct PanSVpos {
     pub core: u32,
 }
 
+#[derive(Debug, Clone)]
 /// To construct the PanSVpos
 pub struct TmpPos {
     pub acc:  String,
