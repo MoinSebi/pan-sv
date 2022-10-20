@@ -197,6 +197,8 @@ pub fn indel_detection2(anchor2bubble: HashMap<(u32, u32), u32>, paths: &Vec<NPa
 }
 
 use std::cmp::Reverse;
+use std::fs::File;
+use std::io::BufWriter;
 
 pub fn split_1(d1: &mut Vec<(usize, u32, u32, u32)>) -> Vec<usize>{
     d1.sort_by_key(|a| (a.0, a.1, Reverse(a.2)));
@@ -226,7 +228,7 @@ pub fn chunk_by_index(d1: Vec<(usize, u32, u32, u32)>, d: Vec<usize>) -> Vec<Vec
 }
 
 pub fn check_parent(mut intervals: Vec<(usize, u32, u32, u32)>) -> (Vec<(usize, u32, u32, u32)>, HashMap<u32, HashSet<u32>>){
-    println!("check parent");
+    info!("check parent");
     let dd = split_1(&mut intervals);
     let mut cc = chunk_by_index(intervals, dd);
     let mut rr = HashMap::new();
@@ -282,9 +284,30 @@ pub fn makesize(d1: &mut Vec<(usize, u32, u32, u32)>, index2: & hashbrown::HashM
 
 }
 
+pub fn save_stuff(mut data: &Vec<(usize, u32, u32, u32)>, paths: &Vec<NPath>) -> Vec<Vec<(u32, bool)>>{
+    info!("make save_stuff");
+    let mut test1 = Vec::new();
+    for x in data.into_iter(){
+        let p = &paths[x.0];
+        let k: Vec<u32> = p.nodes[(x.1 + 1) as usize..x.2 as usize].iter().cloned().collect();
+        let k2: Vec<bool> = p.dir[(x.1 + 1) as usize..x.2 as usize].iter().cloned().collect();
+        let k10: Vec<(u32, bool)> = k.iter().zip(k2,).map(|(x,y)| (*x,y)).collect();
+
+        test1.push(k10)
+    }
+    return test1
+
+}
+
+
 pub fn output1(mut data: Vec<(usize, u32, u32, u32)>, sizzes: Vec<u32>, paths: &Vec<NPath>){
+//    let f = File::create([out, "bed"].join(".")).expect("Unable to create file");
+// let mut f = BufWriter::new(f);
+
     info!("jesus maria");
+    info!("sorting2");
     data.sort_by_key(|a| (a.3));
+    info!("sorting2 end");
     let mut old_bub = 1;
     let mut small = u32::MAX;
     let mut big = 0;
@@ -337,7 +360,6 @@ pub fn output1(mut data: Vec<(usize, u32, u32, u32)>, sizzes: Vec<u32>, paths: &
 
     }
     bub_stats.push((small, big, ss.len(), count));
-
 }
 
 
