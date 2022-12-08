@@ -51,6 +51,7 @@ pub fn algo_panSV_multi2(paths: &Vec<NPath>, counts: CountNode, threads: &usize,
         let carc_genome_count = genome_count.clone();
         let carc_total_len = total_len.clone();
 
+
         let handle = thread::spawn(move || {
 
             let mut lastcore: u32;
@@ -64,6 +65,8 @@ pub fn algo_panSV_multi2(paths: &Vec<NPath>, counts: CountNode, threads: &usize,
                 lastnode = 1;
                 index1 = carc_cc.get(&x.name).unwrap().clone();
                 println!("{}",x.name);
+                let mut looking_for_parent: Vec<(usize, u32, u32, u32, u32, u32)> = Vec::new();
+
 
 
                 // All "open" intervals
@@ -82,37 +85,34 @@ pub fn algo_panSV_multi2(paths: &Vec<NPath>, counts: CountNode, threads: &usize,
                         lastcore = carc_counts.ncount[node];
 
 
-                        // There is no bubble opened with this core level
-                        let mut trig = false;
+                        // Check if there are the latest open interval has a smaller core than the "new" core
+                        let mut trig = interval_open[interval_open.len() - 1].core < carc_counts.ncount[node];
 
                         // List which open trans are removed later
                         let mut remove_list: Vec<usize> = Vec::new();
 
-
-                        // We iterate over all open bubbles
-                        for (index_open, o_trans) in interval_open.iter().enumerate() {
-                            // Check if we find the same core level
-                            if (o_trans.core == carc_counts.ncount[node]) | (interval_open[interval_open.len() - 1].core < carc_counts.ncount[node]){
-                                trig = true;
-                            }
-
-
-                            // If one open_interval has smaller (or same) core level -> close
-                            if o_trans.core <= carc_counts.ncount[node] {
-                                // why this?
-                                result_panSV.push((index1, o_trans.start, index as u32, o_trans.core, o_trans.node1, node.clone()));
-                                remove_list.push(index_open);
-                            }
-                        }
-                        // Remove stuff from the interval_open list
-                        for (index_r, index_remove) in remove_list.iter().enumerate() {
-                            interval_open.remove(*index_remove - index_r);
-                        }
-
-                        // If there is not a open interval which has the same core level -> this still exists
                         if !trig {
                             //println!("BIG HIT");
                             result_panSV.push((index1, interval_open[interval_open.len() - 1].start, index as u32, lastcore, interval_open[interval_open.len() - 1].node1, node.clone()));
+                            looking_for_parent.push((index1, interval_open[interval_open.len() - 1].start, index as u32, lastcore, interval_open[interval_open.len() - 1].node1, node.clone()));
+
+                        } else {
+                            for (index_open, o_trans) in interval_open.iter().enumerate() {
+                                // Check if we find the same core level
+
+
+                                // If one open_interval has smaller (or same) core level -> close
+                                if o_trans.core <= carc_counts.ncount[node] {
+                                    // why this?
+                                    result_panSV.push((index1, o_trans.start, index as u32, o_trans.core, o_trans.node1, node.clone()));
+                                    looking_for_parent.push((index1, o_trans.start, index as u32, o_trans.core, o_trans.node1, node.clone()));
+                                    remove_list.push(index_open);
+                                }
+                            }
+                            // Remove stuff from the interval_open list
+                            for (index_r, index_remove) in remove_list.iter().enumerate() {
+                                interval_open.remove(*index_remove - index_r);
+                            }
                         }
 
                     }
